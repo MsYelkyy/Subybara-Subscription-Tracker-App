@@ -1,4 +1,4 @@
-package com.subybara.app.feature.welcome.presentation
+package com.subybara.app.feature.account
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,10 +33,20 @@ import com.subybara.app.core.designsystem.theme.SubybaraBrown
 import com.subybara.app.core.designsystem.theme.SubybaraGreen
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
 
+/**
+ * First screen shown when the app opens.
+ *
+ * Navigation is handled by the caller through the click callbacks, so this
+ * composable only describes what the screen looks like.
+ *
+ * @param onGetStartedClick Called when the user taps "Get Started".
+ * @param onSignInClick Called when the user taps "I already have an account".
+ * @param modifier Modifier applied to the root layout.
+ */
 @Composable
 fun WelcomeScreen(
-    state: WelcomeUiState,
-    onAction: (WelcomeAction) -> Unit,
+    onGetStartedClick: () -> Unit,
+    onSignInClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     BoxWithConstraints(
@@ -44,11 +54,12 @@ fun WelcomeScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
+        // Scales the Figma frame (375 x 800) to fit the current screen size.
         val designScale = minOf(
-            maxWidth.value / WelcomeDesignTokens.BaseWidth,
-            maxHeight.value / WelcomeDesignTokens.BaseHeight
+            maxWidth.value / WelcomeDimens.BaseWidth,
+            maxHeight.value / WelcomeDimens.BaseHeight
         )
-        val horizontalPadding = WelcomeDesignTokens.HorizontalPadding.scaledDp(designScale)
+        val horizontalPadding = WelcomeDimens.HorizontalPadding.scaledDp(designScale)
 
         Image(
             painter = painterResource(id = R.drawable.bg_welcome),
@@ -62,28 +73,28 @@ fun WelcomeScreen(
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = WelcomeDesignTokens.CapyTop.scaledDp(designScale))
-                .size(WelcomeDesignTokens.CapySize.scaledDp(designScale)),
+                .offset(y = WelcomeDimens.CapyTop.scaledDp(designScale))
+                .size(WelcomeDimens.CapySize.scaledDp(designScale)),
             contentScale = ContentScale.Fit
         )
 
         Image(
-            painter = painterResource(id = R.drawable.logo),
-            contentDescription = state.title,
+            painter = painterResource(id = R.drawable.logo_subybara),
+            contentDescription = "Subybara",
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = WelcomeDesignTokens.LogoTop.scaledDp(designScale))
-                .width(minOf(WelcomeDesignTokens.LogoWidth * designScale, maxWidth.value).dp)
-                .aspectRatio(WelcomeDesignTokens.LogoAspectRatio),
+                .offset(y = WelcomeDimens.LogoTop.scaledDp(designScale))
+                .width(minOf(WelcomeDimens.LogoWidth * designScale, maxWidth.value).dp)
+                .aspectRatio(WelcomeDimens.LogoAspectRatio),
             contentScale = ContentScale.Fit
         )
 
         Text(
-            text = state.headline,
+            text = "Track your subscriptions.\nAvoid surprise charges.",
             color = SubybaraBrown,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = WelcomeDesignTokens.CopyTop.scaledDp(designScale))
+                .offset(y = WelcomeDimens.CopyTop.scaledDp(designScale))
                 .padding(horizontal = horizontalPadding)
                 .fillMaxWidth(),
             style = MaterialTheme.typography.bodyLarge.copy(
@@ -96,38 +107,58 @@ fun WelcomeScreen(
         )
 
         SubybaraPrimaryButton(
-            text = state.primaryActionLabel,
-            onClick = { onAction(WelcomeAction.GetStarted) },
+            text = "Get Started",
+            onClick = onGetStartedClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = WelcomeDesignTokens.ButtonTop.scaledDp(designScale))
+                .offset(y = WelcomeDimens.ButtonTop.scaledDp(designScale))
                 .padding(horizontal = horizontalPadding)
                 .fillMaxWidth()
-                .height(WelcomeDesignTokens.ButtonHeight.scaledDp(designScale)),
-            shape = RoundedCornerShape(WelcomeDesignTokens.ButtonRadius.scaledDp(designScale))
+                .height(WelcomeDimens.ButtonHeight.scaledDp(designScale)),
+            shape = RoundedCornerShape(WelcomeDimens.ButtonRadius.scaledDp(designScale))
         )
 
         SubybaraTextAction(
-            text = state.secondaryActionLabel,
-            onClick = { onAction(WelcomeAction.SignIn) },
+            text = "I already have an account",
+            onClick = onSignInClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = WelcomeDesignTokens.SignInTop.scaledDp(designScale)),
+                .offset(y = WelcomeDimens.SignInTop.scaledDp(designScale)),
             color = SubybaraGreen,
-            shape = RoundedCornerShape(WelcomeDesignTokens.SignInRadius.dp)
+            shape = RoundedCornerShape(WelcomeDimens.SignInRadius.dp)
         )
     }
 }
 
+/**
+ * Figma measurements for the Welcome screen, based on a 375 x 800 frame.
+ */
+private object WelcomeDimens {
+    const val BaseWidth = 375f
+    const val BaseHeight = 800f
+    const val HorizontalPadding = 24f
+    const val CapyTop = 71f
+    const val CapySize = 336f
+    const val LogoTop = 302f
+    const val LogoWidth = 352f
+    const val LogoAspectRatio = 1.5f
+    const val CopyTop = 455f
+    const val ButtonTop = 586f
+    const val ButtonHeight = 44f
+    const val ButtonRadius = 18f
+    const val SignInTop = 650f
+    const val SignInRadius = 18f
+}
+
 private fun Float.scaledDp(scale: Float): Dp = (this * scale).dp
 
-@Preview(showBackground = true, widthDp = 375, heightDp = 800)
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun WelcomeScreenPreview() {
     SubybaraTheme {
         WelcomeScreen(
-            state = WelcomeUiState(),
-            onAction = {}
+            onGetStartedClick = {},
+            onSignInClick = {}
         )
     }
 }

@@ -21,6 +21,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subybara.app.core.designsystem.theme.SubybaraGreen
 
+/**
+ * Displays the primary filled button used for important actions in Subybara.
+ *
+ * @param text Text displayed inside the button.
+ * @param onClick Called when the user taps the button.
+ * @param modifier Modifier applied to the button.
+ * @param enabled Whether the button can be interacted with.
+ * @param shape Shape of the button container.
+ */
 @Composable
 fun SubybaraPrimaryButton(
     text: String,
@@ -38,7 +47,9 @@ fun SubybaraPrimaryButton(
             containerColor = SubybaraGreen,
             contentColor = Color.White
         ),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 0.dp
+        )
     ) {
         Text(
             text = text,
@@ -51,6 +62,19 @@ fun SubybaraPrimaryButton(
     }
 }
 
+/**
+ * Displays a clickable text action for secondary or low-emphasis actions.
+ *
+ * The component provides button semantics and a configurable touch target
+ * without displaying a filled button container.
+ *
+ * @param text Text displayed for the action.
+ * @param onClick Called when the user taps the action.
+ * @param modifier Modifier applied to the clickable container.
+ * @param color Color of the displayed text.
+ * @param shape Shape used for clipping the clickable area.
+ * @param contentPadding Padding around the text and within the touch target.
+ */
 @Composable
 fun SubybaraTextAction(
     text: String,
@@ -58,12 +82,18 @@ fun SubybaraTextAction(
     modifier: Modifier = Modifier,
     color: Color = SubybaraGreen,
     shape: Shape = RoundedCornerShape(18.dp),
-    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+    contentPadding: PaddingValues = PaddingValues(
+        horizontal = 16.dp,
+        vertical = 10.dp
+    )
 ) {
     Box(
         modifier = modifier
             .clip(shape)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(
+                role = Role.Button,
+                onClick = onClick
+            )
             .padding(contentPadding),
         contentAlignment = Alignment.Center
     ) {
