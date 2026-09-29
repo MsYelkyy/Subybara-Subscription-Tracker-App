@@ -32,10 +32,11 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subybara.app.R
-import com.subybara.app.core.designsystem.theme.SubybaraForestGreen
-import com.subybara.app.core.designsystem.theme.SubybaraOffWhite
-import com.subybara.app.core.designsystem.theme.SubybaraSageGreen
-import com.subybara.app.core.designsystem.theme.SubybaraSoftGreen
+import com.subybara.app.core.designsystem.theme.OffWhite
+import com.subybara.app.core.designsystem.theme.Primary200
+import com.subybara.app.core.designsystem.theme.Primary250
+import com.subybara.app.core.designsystem.theme.Primary600
+import com.subybara.app.core.designsystem.theme.Primary900
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
 import com.subybara.app.navigation.SubybaraDestination
 
@@ -45,23 +46,22 @@ private val BottomBarShape = RoundedCornerShape(
     bottomStart = 20.dp,
     bottomEnd = 20.dp
 )
+
 private val BottomBarShadow = Shadow(
     radius = 12.dp,
-    color = SubybaraForestGreen.copy(alpha = 0.12f),
-    offset = DpOffset(x = 0.dp, y = (-2).dp)
+    color = Primary900.copy(alpha = 0.12f),
+    offset = DpOffset(
+        x = 0.dp,
+        y = (-2).dp
+    )
 )
 
 /**
  * Shared bottom navigation bar for the four main screens:
  * Home, Subscriptions, Insights and Profile.
  *
- * The center button is an action (Add Subscription), not a destination,
- * so it is never shown as selected.
- *
- * @param selectedDestination The main screen currently shown.
- * @param onDestinationClick Called with the tapped main destination.
- * @param onAddSubscriptionClick Called when the center add button is tapped.
- * @param modifier Modifier applied to the bar.
+ * The center button is an action for adding a subscription,
+ * so it is not treated as a navigation destination.
  */
 @Composable
 fun SubybaraBottomBar(
@@ -73,8 +73,14 @@ fun SubybaraBottomBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(shape = BottomBarShape, shadow = BottomBarShadow)
-            .background(SubybaraOffWhite, BottomBarShape)
+            .dropShadow(
+                shape = BottomBarShape,
+                shadow = BottomBarShadow
+            )
+            .background(
+                color = OffWhite,
+                shape = BottomBarShape
+            )
             .navigationBarsPadding()
             .height(66.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -83,41 +89,58 @@ fun SubybaraBottomBar(
             iconRes = R.drawable.ic_home,
             label = "Home",
             selected = selectedDestination == SubybaraDestination.Home,
-            onClick = { onDestinationClick(SubybaraDestination.Home) },
+            onClick = {
+                onDestinationClick(SubybaraDestination.Home)
+            },
             modifier = Modifier.weight(1f)
         )
+
         SubybaraNavigationItem(
             iconRes = R.drawable.ic_subscriptions,
             label = "Subscriptions",
             selected = selectedDestination == SubybaraDestination.Subscriptions,
-            onClick = { onDestinationClick(SubybaraDestination.Subscriptions) },
+            onClick = {
+                onDestinationClick(SubybaraDestination.Subscriptions)
+            },
             modifier = Modifier.weight(1f)
         )
+
         Box(
             modifier = Modifier.weight(1f),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_add_subscription),
+                painter = painterResource(
+                    id = R.drawable.ic_add_subscription
+                ),
                 contentDescription = "Add subscription",
                 modifier = Modifier
                     .clip(CircleShape)
-                    .clickable(role = Role.Button, onClick = onAddSubscriptionClick),
+                    .clickable(
+                        role = Role.Button,
+                        onClick = onAddSubscriptionClick
+                    ),
                 tint = Color.Unspecified
             )
         }
+
         SubybaraNavigationItem(
             iconRes = R.drawable.ic_insights,
             label = "Insights",
             selected = selectedDestination == SubybaraDestination.Insights,
-            onClick = { onDestinationClick(SubybaraDestination.Insights) },
+            onClick = {
+                onDestinationClick(SubybaraDestination.Insights)
+            },
             modifier = Modifier.weight(1f)
         )
+
         SubybaraNavigationItem(
             iconRes = R.drawable.ic_profile,
             label = "Profile",
             selected = selectedDestination == SubybaraDestination.Profile,
-            onClick = { onDestinationClick(SubybaraDestination.Profile) },
+            onClick = {
+                onDestinationClick(SubybaraDestination.Profile)
+            },
             modifier = Modifier.weight(1f)
         )
     }
@@ -131,7 +154,11 @@ private fun SubybaraNavigationItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val contentColor = if (selected) SubybaraForestGreen else SubybaraSageGreen
+    val contentColor = if (selected) {
+        Primary900
+    } else {
+        Primary600
+    }
 
     Column(
         modifier = modifier
@@ -146,17 +173,27 @@ private fun SubybaraNavigationItem(
     ) {
         Box(
             modifier = Modifier.background(
-                color = if (selected) SubybaraSoftGreen else Color.Transparent,
+                color = if (selected) {
+                    Primary250
+                } else {
+                    Color.Transparent
+                },
                 shape = RoundedCornerShape(10.dp)
             )
         ) {
             Icon(
-                painter = painterResource(id = iconRes),
+                painter = painterResource(
+                    id = iconRes
+                ),
                 contentDescription = null,
-                // Inactive icons keep the color drawn in the vector asset.
-                tint = if (selected) SubybaraForestGreen else Color.Unspecified
+                tint = if (selected) {
+                    Primary900
+                } else {
+                    Color.Unspecified
+                }
             )
         }
+
         Text(
             text = label,
             color = contentColor,

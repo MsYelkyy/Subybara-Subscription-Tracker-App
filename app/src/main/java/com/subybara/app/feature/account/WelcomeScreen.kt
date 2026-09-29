@@ -17,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -29,8 +28,8 @@ import androidx.compose.ui.unit.sp
 import com.subybara.app.R
 import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
 import com.subybara.app.core.designsystem.component.SubybaraTextAction
-import com.subybara.app.core.designsystem.theme.SubybaraBrown
-import com.subybara.app.core.designsystem.theme.SubybaraGreen
+import com.subybara.app.core.designsystem.theme.Primary600
+import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
 
 /**
@@ -52,50 +51,74 @@ fun WelcomeScreen(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        // Scales the Figma frame (375 x 800) to fit the current screen size.
         val designScale = minOf(
             maxWidth.value / WelcomeDimens.BaseWidth,
             maxHeight.value / WelcomeDimens.BaseHeight
         )
-        val horizontalPadding = WelcomeDimens.HorizontalPadding.scaledDp(designScale)
+
+        val horizontalPadding =
+            WelcomeDimens.HorizontalPadding.scaledDp(designScale)
 
         Image(
-            painter = painterResource(id = R.drawable.bg_welcome),
+            painter = painterResource(
+                id = R.drawable.bg_welcome
+            ),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
 
         Image(
-            painter = painterResource(id = R.drawable.capy_welcome),
+            painter = painterResource(
+                id = R.drawable.capy_welcome
+            ),
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = WelcomeDimens.CapyTop.scaledDp(designScale))
-                .size(WelcomeDimens.CapySize.scaledDp(designScale)),
+                .offset(
+                    y = WelcomeDimens.CapyTop.scaledDp(designScale)
+                )
+                .size(
+                    WelcomeDimens.CapySize.scaledDp(designScale)
+                ),
             contentScale = ContentScale.Fit
         )
 
         Image(
-            painter = painterResource(id = R.drawable.logo_subybara),
+            painter = painterResource(
+                id = R.drawable.logo_subybara
+            ),
             contentDescription = "Subybara",
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = WelcomeDimens.LogoTop.scaledDp(designScale))
-                .width(minOf(WelcomeDimens.LogoWidth * designScale, maxWidth.value).dp)
-                .aspectRatio(WelcomeDimens.LogoAspectRatio),
+                .offset(
+                    y = WelcomeDimens.LogoTop.scaledDp(designScale)
+                )
+                .width(
+                    minOf(
+                        WelcomeDimens.LogoWidth * designScale,
+                        maxWidth.value
+                    ).dp
+                )
+                .aspectRatio(
+                    WelcomeDimens.LogoAspectRatio
+                ),
             contentScale = ContentScale.Fit
         )
 
         Text(
             text = "Track your subscriptions.\nAvoid surprise charges.",
-            color = SubybaraBrown,
+            color = Neutral800,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = WelcomeDimens.CopyTop.scaledDp(designScale))
-                .padding(horizontal = horizontalPadding)
+                .offset(
+                    y = WelcomeDimens.CopyTop.scaledDp(designScale)
+                )
+                .padding(
+                    horizontal = horizontalPadding
+                )
                 .fillMaxWidth(),
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontSize = 16.sp,
@@ -111,11 +134,19 @@ fun WelcomeScreen(
             onClick = onGetStartedClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = WelcomeDimens.ButtonTop.scaledDp(designScale))
-                .padding(horizontal = horizontalPadding)
+                .offset(
+                    y = WelcomeDimens.ButtonTop.scaledDp(designScale)
+                )
+                .padding(
+                    horizontal = horizontalPadding
+                )
                 .fillMaxWidth()
-                .height(WelcomeDimens.ButtonHeight.scaledDp(designScale)),
-            shape = RoundedCornerShape(WelcomeDimens.ButtonRadius.scaledDp(designScale))
+                .height(
+                    WelcomeDimens.ButtonHeight.scaledDp(designScale)
+                ),
+            shape = RoundedCornerShape(
+                WelcomeDimens.ButtonRadius.scaledDp(designScale)
+            )
         )
 
         SubybaraTextAction(
@@ -123,36 +154,49 @@ fun WelcomeScreen(
             onClick = onSignInClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = WelcomeDimens.SignInTop.scaledDp(designScale)),
-            color = SubybaraGreen,
-            shape = RoundedCornerShape(WelcomeDimens.SignInRadius.dp)
+                .offset(
+                    y = WelcomeDimens.SignInTop.scaledDp(designScale)
+                ),
+            color = Primary600
         )
     }
 }
 
 /**
- * Figma measurements for the Welcome screen, based on a 375 x 800 frame.
+ * Figma measurements for the Welcome screen,
+ * based on a 375 x 800 frame.
  */
 private object WelcomeDimens {
     const val BaseWidth = 375f
     const val BaseHeight = 800f
+
     const val HorizontalPadding = 24f
+
     const val CapyTop = 71f
     const val CapySize = 336f
+
     const val LogoTop = 302f
     const val LogoWidth = 352f
     const val LogoAspectRatio = 1.5f
+
     const val CopyTop = 455f
+
     const val ButtonTop = 586f
     const val ButtonHeight = 44f
     const val ButtonRadius = 18f
+
     const val SignInTop = 650f
     const val SignInRadius = 18f
 }
 
-private fun Float.scaledDp(scale: Float): Dp = (this * scale).dp
+private fun Float.scaledDp(
+    scale: Float
+): Dp = (this * scale).dp
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(
+    showBackground = true,
+    showSystemUi = true
+)
 @Composable
 private fun WelcomeScreenPreview() {
     SubybaraTheme {
