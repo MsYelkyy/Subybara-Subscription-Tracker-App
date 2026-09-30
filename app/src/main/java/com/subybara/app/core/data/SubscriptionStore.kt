@@ -2,8 +2,8 @@ package com.subybara.app.core.data
 
 import androidx.compose.runtime.mutableStateListOf
 import com.subybara.app.core.model.Subscription
+import com.subybara.app.core.model.SubscriptionCategory
 import com.subybara.app.core.model.SubscriptionStatus
-
 /**
  * Stores and manages temporary subscription data shared across the application.
  *
@@ -19,6 +19,7 @@ object SubscriptionStore {
             amount = 149.00,
             billingCycle = "Monthly",
             renewalDate = "October 29",
+            category = SubscriptionCategory.MUSIC,
             status = SubscriptionStatus.ACTIVE
         ),
         Subscription(
@@ -27,6 +28,7 @@ object SubscriptionStore {
             amount = 549.00,
             billingCycle = "Monthly",
             renewalDate = "November 1",
+            category = SubscriptionCategory.ENTERTAINMENT,
             status = SubscriptionStatus.ACTIVE
         ),
         Subscription(
@@ -35,6 +37,7 @@ object SubscriptionStore {
             amount = 159.00,
             billingCycle = "Monthly",
             renewalDate = "November 8",
+            category = SubscriptionCategory.MUSIC,
             status = SubscriptionStatus.ACTIVE
         )
     )
