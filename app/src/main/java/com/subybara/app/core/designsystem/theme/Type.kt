@@ -28,20 +28,50 @@ private fun geologicaFont(
 )
 
 val Typography = Typography(
-    bodyLarge = TextStyle(
+    // Heading - 18 / 120% / SemiBold
+    titleLarge = TextStyle(
+        fontFamily = GeologicaFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 18.sp,
+        lineHeight = 21.6.sp,
+        letterSpacing = 0.sp
+    ),
+
+    // Section title - 16 / 120% / SemiBold
+    titleMedium = TextStyle(
+        fontFamily = GeologicaFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp,
+        lineHeight = 19.2.sp,
+        letterSpacing = 0.sp
+    ),
+
+    // Regular text - 14 / Regular
+    bodyMedium = TextStyle(
         fontFamily = GeologicaFontFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
+        fontSize = 14.sp,
         letterSpacing = 0.sp
     ),
+
+    // Filter / small body - 12 / 140% / Regular
+    bodySmall = TextStyle(
+        fontFamily = GeologicaFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+        lineHeight = 16.8.sp,
+        letterSpacing = 0.sp
+    ),
+
+    // Shared button/action text
     labelLarge = TextStyle(
         fontFamily = GeologicaFontFamily,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
-        lineHeight = 20.sp,
+        lineHeight = 14.sp,
         letterSpacing = 0.sp
     ),
+
     labelMedium = TextStyle(
         fontFamily = GeologicaFontFamily,
         fontWeight = FontWeight.Medium,
