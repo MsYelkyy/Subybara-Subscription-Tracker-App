@@ -12,12 +12,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -38,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -123,11 +126,13 @@ fun SubscriptionsScreen(
         ) {
             Text(
                 text = "My Subscription",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 16.dp)
+                Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleLarge,
+                color = Neutral800
             )
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             SubscriptionSearchField(
                 searchQuery = searchQuery,
@@ -150,17 +155,6 @@ fun SubscriptionsScreen(
                     text = "${selectedFilter.label} (${visibleSubscriptions.size})",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onBackground
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Icon(
-                    painter = painterResource(
-                        id = R.drawable.ic_chevron
-                    ),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = Color.Unspecified
                 )
             }
 
@@ -190,36 +184,57 @@ private enum class SubscriptionFilter(
     Canceled("Canceled")
 }
 
+private enum class SubscriptionType(
+    val label: String) {
+    MUSIC(label = "Music")
+}
+
 @Composable
 private fun SubscriptionSearchField(
     searchQuery: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    OutlinedTextField(
+    BasicTextField(
         value = searchQuery,
         onValueChange = onQueryChange,
-        modifier = modifier.fillMaxWidth(),
-        placeholder = {
-            Text(text = "Search subscriptions")
-        },
-        leadingIcon = {
-            Icon(
-                painter = painterResource(
-                    id = R.drawable.ic_search
-                ),
-                contentDescription = "Search",
-                tint = Color.Unspecified
-            )
-        },
         singleLine = true,
-        shape = RoundedCornerShape(15.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = Secondary200,
-            unfocusedContainerColor = Secondary200,
-            focusedBorderColor = Color.Transparent,
-            unfocusedBorderColor = Color.Transparent
-        )
+        textStyle = MaterialTheme.typography.bodyMedium.copy(
+            color = Neutral800
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(40.dp)
+            .background(
+                color = Secondary200,
+                shape = RoundedCornerShape(20.dp)
+            ),
+        decorationBox = { innerTextField ->
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_search),
+                    contentDescription = "Search",
+                    tint = Color.Unspecified
+                )
+                Spacer(Modifier.width(8.dp))
+
+                Box{
+                    if (searchQuery.isEmpty()) {
+                        Text(
+                            text = "Search subscriptions",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Neutral500
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        }
     )
 }
 
@@ -282,6 +297,13 @@ private fun SubscriptionRow(
             )
 
             Text(
+                text = subscription.category.label,
+                style = MaterialTheme.typography.bodySmall
+
+
+            )
+
+            Text(
                 text = "Renews on ${subscription.renewalDate}",
                 style = MaterialTheme.typography.bodySmall,
                 color = Neutral500
@@ -293,7 +315,7 @@ private fun SubscriptionRow(
         ) {
             Text(
                 text = "₱%,.2f".format(subscription.amount),
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelMedium,
                 color = Primary900
             )
 
@@ -303,6 +325,15 @@ private fun SubscriptionRow(
                 color = Neutral500
             )
         }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Icon(
+            painter = painterResource(R.drawable.ic_chevron_right),
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = Color.Unspecified
+        )
     }
 }
 
@@ -341,9 +372,6 @@ private fun SubscriptionLogo(
     }
 }
 
-/**
- * Matches a subscription name to one of the bundled service logos.
- */
 @DrawableRes
 private fun logoFor(
     name: String
