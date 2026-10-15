@@ -31,5 +31,9 @@ data class Subscription(
     val billingCycle: String,
     val renewalDate: String,
     val category: SubscriptionCategory,
-    val status: SubscriptionStatus
+    val status: SubscriptionStatus,
+    val paymentMethod: String = "",
+    val startDate: String = "",
+    val notes: String = "",
+    val logoUri: String? = null
 )

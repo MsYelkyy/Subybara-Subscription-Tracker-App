@@ -23,6 +23,9 @@ import com.subybara.app.core.designsystem.theme.White
 
 /**
  * Main filled action button used for primary actions.
+ *
+ * [containerColor] is green by default; pass a different color for
+ * destructive actions such as deleting.
  */
 @Composable
 fun SubybaraPrimaryButton(
@@ -30,7 +33,8 @@ fun SubybaraPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(15.dp)
+    shape: Shape = RoundedCornerShape(15.dp),
+    containerColor: Color = Primary600
 ) {
     Button(
         onClick = onClick,
@@ -38,9 +42,9 @@ fun SubybaraPrimaryButton(
         enabled = enabled,
         shape = shape,
         colors = ButtonDefaults.buttonColors(
-            containerColor = Primary600,
+            containerColor = containerColor,
             contentColor = White,
-            disabledContainerColor = Primary600.copy(alpha = 0.4f),
+            disabledContainerColor = containerColor.copy(alpha = 0.4f),
             disabledContentColor = White.copy(alpha = 0.7f)
         ),
         contentPadding = PaddingValues(
