@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,13 +14,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -48,48 +46,23 @@ import com.subybara.app.core.model.Subscription
 import com.subybara.app.navigation.SubybaraDestination
 import java.util.Locale
 
-
-// local sample data set -- edit values here for graph and bar
-
-data class MonthlyTrendData(
-    val month: String,
-    val amount: Double,
-    val isCurrentMonth: Boolean = false
-)
-
-data class CategorySpendingData(
-    val categoryName: String,
-    val amount: Double,
-    val color: Color
-)
-
-private val SampleMonthlyTrends = listOf(
-    MonthlyTrendData("Dec", 5800.0),
-    MonthlyTrendData("Jan", 8200.0),
-    MonthlyTrendData("Feb", 6900.0),
-    MonthlyTrendData("Mar", 11200.0),
-    MonthlyTrendData("Apr", 9400.0),
-    MonthlyTrendData("May", 9786.95, isCurrentMonth = true)
-)
-
-private val SampleCategorySpending = listOf(
-    CategorySpendingData("Entertainment", 4404.13, Color(0xFF6B8E4E)),
-    CategorySpendingData("Productivity", 1957.39, Color(0xFFE0A34A)),
-    CategorySpendingData("Music", 1500.00, Color(0xFFC85A32)),
-    CategorySpendingData("Cloud Storage", 1000.00, Color(0xFF9D7BB0)),
-    CategorySpendingData("Others", 925.43, Color(0xFF7FA3C9))
+private val CategoryPalette = listOf(
+    Color(0xFF6B8E4E),
+    Color(0xFFE0A34A),
+    Color(0xFFC85A32),
+    Color(0xFF9D7BB0),
+    Color(0xFF7FA3C9),
+    Color(0xFF8DAA9D)
 )
 
 /**
- * Insights screen displaying subscription spending summaries, bar chart trends,
- * segmented category bars, and category breakdowns.
+ * Insights screen displaying subscription spending summaries and nested category breakdowns.
  *
  * @param subscriptions List of user subscriptions, defaults to [SubscriptionStore.subscriptions].
  * @param modifier Applied to root layout.
  * @param onDestinationClick Callback for bottom bar navigation taps.
  * @param onAddSubscriptionClick Callback for center add button tap.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun InsightsScreen(
     subscriptions: List<Subscription> = SubscriptionStore.subscriptions,
@@ -99,8 +72,15 @@ fun InsightsScreen(
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(InsightsTab.Overview) }
 
-    val currentSpend = SampleMonthlyTrends.lastOrNull()?.amount ?: 0.0
-    val totalCategorySpend = SampleCategorySpending.sumOf { it.amount }
+    val totalMonthlySpend = subscriptions.sumOf { it.amount }
+
+    val categorySummaries = subscriptions
+        .groupBy { it.category.label }
+        .entries
+        .mapIndexed { index, (label, items) ->
+            Triple(label, items.sumOf { it.amount }, CategoryPalette[index % CategoryPalette.size])
+        }
+        .sortedByDescending { it.second }
 
     Scaffold(
         modifier = modifier,
@@ -129,226 +109,138 @@ fun InsightsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Sub-tabs: Overview, Spending,Categories
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                InsightsTab.entries.forEach { tab ->
-                    val isSelected = tab == selectedTab
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { selectedTab = tab },
-                        label = { Text(text = tab.label) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            labelColor = MaterialTheme.colorScheme.onSurface,
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+            InsightsTabRow(
+                selectedTab = selectedTab,
+                onTabSelect = { selectedTab = it }
+            )
+
+            if (subscriptions.isEmpty()) {
+                EmptyInsightsMessage()
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    item {
+                        MonthlySpendingCard(
+                            totalSpend = totalMonthlySpend
                         )
-                    )
-                }
-            }
-
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                // Monthly Spending & Bar Chart Card
-                item {
-                    SubybaraCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = "THIS MONTH SPENDING",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "₱${String.format(Locale.US, "%,.2f", currentSpend)}",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(MaterialTheme.colorScheme.secondaryContainer)
-                                    .padding(horizontal = 10.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = "+ 12% vs last month",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Trend Header
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Trend",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                                ) {
-                                    Text(
-                                        text = "Last 6 months ⌄",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-
-                            // Bar Chart
-                            BarChartSection(trends = SampleMonthlyTrends)
-                        }
                     }
-                }
 
-                // Spending by Category Section
-                item {
-                    SubybaraCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Text(
-                                text = "Spending by Category",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            // Segmented Bar
-                            SegmentedCategoryBar(
-                                categories = SampleCategorySpending,
-                                totalSpend = totalCategorySpend
-                            )
-
-                            // Legend Tags
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                SampleCategorySpending.forEach { category ->
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .clip(CircleShape)
-                                                .background(category.color)
-                                        )
-                                        Text(
-                                            text = category.categoryName,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                    item {
+                        SpendingByCategoryCard(
+                            categories = categorySummaries,
+                            totalSpend = totalMonthlySpend
+                        )
                     }
-                }
-
-                // Detailed Category List
-                items(SampleCategorySpending) { category ->
-                    CategoryProgressCard(
-                        category = category,
-                        totalSpend = totalCategorySpend
-                    )
                 }
             }
         }
     }
 }
 
-// ============================================================================
-// HELPER COMPOSABLES FOR GRAPH & BARS
-// ============================================================================
+@Composable
+private fun InsightsTabRow(
+    selectedTab: InsightsTab,
+    onTabSelect: (InsightsTab) -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        InsightsTab.entries.forEach { tab ->
+            FilterChip(
+                selected = tab == selectedTab,
+                onClick = { onTabSelect(tab) },
+                label = { Text(text = tab.label) },
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    labelColor = MaterialTheme.colorScheme.onSurface,
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        }
+    }
+}
 
 @Composable
-private fun BarChartSection(trends: List<MonthlyTrendData>) {
-    val maxAmount = (trends.maxOfOrNull { it.amount } ?: 1.0) * 1.15
-
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        // Y-Axis Labels & Bars Area
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(110.dp),
-            verticalAlignment = Alignment.Bottom
+private fun MonthlySpendingCard(
+    totalSpend: Double
+) {
+    SubybaraCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
+            Text(
+                text = "THIS MONTH SPENDING",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "₱${String.format(Locale.US, "%,.2f", totalSpend)}",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(end = 8.dp),
-                verticalArrangement = Arrangement.SpaceBetween
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
-                Text("15K", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                Text("10K", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                Text("5K", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                Text("0", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-            }
-
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                trends.forEach { trend ->
-                    val heightFactor = (trend.amount / maxAmount).toFloat().coerceIn(0.1f, 1f)
-                    val barColor = if (trend.isCurrentMonth) Color(0xFF6B8E4E) else Color(0xFFCBE3A9)
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 4.dp)
-                            .fillMaxHeight(heightFactor)
-                            .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp, bottomStart = 2.dp, bottomEnd = 2.dp))
-                            .background(barColor)
-                    )
-                }
+                Text(
+                    text = "First month tracked",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // X-Axis Month Labels
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 28.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+@Composable
+private fun SpendingByCategoryCard(
+    categories: List<Triple<String, Double, Color>>,
+    totalSpend: Double
+) {
+    SubybaraCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            trends.forEach { trend ->
-                Text(
-                    text = trend.month,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center
+            Text(
+                text = "Spending by Category",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            SegmentedCategoryBar(categories = categories, totalSpend = totalSpend)
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                categories.forEach { (categoryName, _, color) ->
+                    CategoryLegendTag(label = categoryName, color = color)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Category progress rows nested directly inside the card surface
+            categories.forEachIndexed { index, (categoryName, totalAmount, color) ->
+                CategoryProgressRow(
+                    categoryName = categoryName,
+                    totalAmount = totalAmount,
+                    color = color,
+                    totalSpend = totalSpend,
+                    showDivider = index < categories.lastIndex
                 )
             }
         }
@@ -357,7 +249,7 @@ private fun BarChartSection(trends: List<MonthlyTrendData>) {
 
 @Composable
 private fun SegmentedCategoryBar(
-    categories: List<CategorySpendingData>,
+    categories: List<Triple<String, Double, Color>>,
     totalSpend: Double
 ) {
     Row(
@@ -367,72 +259,117 @@ private fun SegmentedCategoryBar(
             .clip(RoundedCornerShape(8.dp)),
         horizontalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        categories.forEach { category ->
-            val weight = if (totalSpend > 0) (category.amount / totalSpend).toFloat() else 1f
+        categories.forEach { (_, amount, color) ->
+            val weight = if (totalSpend > 0) (amount / totalSpend).toFloat() else 1f
             Box(
                 modifier = Modifier
                     .weight(weight.coerceAtLeast(0.01f))
                     .fillMaxHeight()
-                    .background(category.color)
+                    .background(color)
             )
         }
     }
 }
 
 @Composable
-private fun CategoryProgressCard(
-    category: CategorySpendingData,
-    totalSpend: Double
+private fun CategoryLegendTag(
+    label: String,
+    color: Color
 ) {
-    val progress = if (totalSpend > 0) (category.amount / totalSpend).toFloat() else 0f
-
-    SubybaraCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun CategoryProgressRow(
+    categoryName: String,
+    totalAmount: Double,
+    color: Color,
+    totalSpend: Double,
+    showDivider: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val progress = if (totalSpend > 0) (totalAmount / totalSpend).toFloat() else 0f
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(category.color)
-                    )
-                    Text(
-                        text = category.categoryName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(color)
+                )
                 Text(
-                    text = "₱${String.format(Locale.US, "%,.2f", category.amount)}",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
+                    text = categoryName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp)),
-                color = category.color,
-                trackColor = MaterialTheme.colorScheme.secondary
+            Text(
+                text = "₱${String.format(Locale.US, "%,.2f", totalAmount)}",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
+
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(3.dp)),
+            color = color,
+            trackColor = MaterialTheme.colorScheme.secondary
+        )
+
+        if (showDivider) {
+            HorizontalDivider(
+                modifier = Modifier.padding(top = 8.dp),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                thickness = 0.5.dp
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyInsightsMessage() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "No subscription data available.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
