@@ -95,6 +95,12 @@ object SubscriptionStore {
         return true
     }
 
+    /** Updates tracking status only; it does not contact the provider. */
+    fun changeStatus(subscriptionId: Int, status: SubscriptionStatus): Boolean {
+        val subscription = findById(subscriptionId) ?: return false
+        return update(subscription.copy(status = status))
+    }
+
     /**
      * Removes a subscription using its unique ID.
      *

@@ -62,6 +62,9 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -251,6 +254,7 @@ internal fun SubscriptionForm(
                             .takeIf { showErrors && name.isBlank() }
                     ) {
                         FormTextField(
+                            label = "Subscription Name",
                             value = name,
                             onValueChange = { name = it },
                             placeholder = "Ex. Netflix",
@@ -278,6 +282,7 @@ internal fun SubscriptionForm(
                             .takeIf { showErrors && amount == null }
                     ) {
                         FormTextField(
+                            label = "Billing Amount",
                             value = amountText,
                             onValueChange = { input ->
                                 if (AmountInput.matches(input)) {
@@ -328,6 +333,7 @@ internal fun SubscriptionForm(
 
                     FormFieldCard(label = "Notes (Optional)") {
                         FormTextField(
+                            label = "Notes",
                             value = notes,
                             onValueChange = { notes = it },
                             placeholder = "Add a note",
@@ -372,7 +378,7 @@ internal fun SubscriptionForm(
                                 )
                             }
                         },
-                        modifier = Modifier.height(44.dp),
+                        modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(20.dp)
                     )
                 }
@@ -544,7 +550,9 @@ private fun FormFieldCard(
     trailing: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    SubybaraCard(modifier = modifier.fillMaxWidth()) {
+    SubybaraCard(modifier = modifier.fillMaxWidth().semantics {
+        if (error != null) error(error)
+    }) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -610,6 +618,7 @@ private fun FieldValueText(
 
 @Composable
 private fun FormTextField(
+    label: String,
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
@@ -623,7 +632,7 @@ private fun FormTextField(
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().semantics { contentDescription = label },
         singleLine = true,
         textStyle = valueStyle.copy(color = Neutral950),
         keyboardOptions = keyboardOptions,

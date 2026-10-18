@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,7 +24,9 @@ import com.subybara.app.feature.subscriptions.EditSubscriptionScreen
 import com.subybara.app.feature.subscriptions.SubscriptionDetailsScreen
 import com.subybara.app.feature.subscriptions.SubscriptionSnackbarHost
 import com.subybara.app.feature.subscriptions.SubscriptionsScreen
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 @Composable
 fun SubybaraNavHost() {
@@ -51,14 +54,20 @@ fun SubybaraNavHost() {
         navigator.navigateTo(SubybaraDestination.AddSubscription)
     }
 
+    // Replace the current message so repeated taps don't queue old snackbars.
+    var feedbackJob by remember { mutableStateOf<Job?>(null) }
     val showFeedback: (String) -> Unit = { message ->
-        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
+        feedbackJob?.cancel()
+        feedbackJob = coroutineScope.launch {
+            withTimeoutOrNull(2_000L) {
+                snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Indefinite)
+            }
+        }
     }
 
     val selectedSubscription = SubscriptionStore.findById(selectedSubscriptionId)
 
-    // The selected subscription can be gone, for example after the app process
-    // restarted, so fall back to the list instead of showing an empty screen.
+    // If the subscription no longer exists, return to the list instead of showing an empty screen.
     val requestedDestination = SubybaraDestination.fromRoute(currentRoute)
     val needsSelectedSubscription =
         requestedDestination == SubybaraDestination.SubscriptionDetails ||
@@ -69,8 +78,7 @@ fun SubybaraNavHost() {
         requestedDestination
     }
 
-    // Declared before the screens so the forms can handle Back first when they
-    // have unsaved changes.
+    // Let forms handle Back first if there are unsaved changes.
     BackHandler(
         enabled = destination == SubybaraDestination.SubscriptionDetails ||
             destination == SubybaraDestination.AddSubscription ||
@@ -109,7 +117,12 @@ fun SubybaraNavHost() {
                     subscription = subscription,
                     onBackClick = { navigator.navigateTo(SubybaraDestination.Subscriptions) },
                     onEditClick = { navigator.navigateTo(SubybaraDestination.EditSubscription) },
-                    onCancelSubscriptionClick = {
+                    onStatusChange = { status ->
+                        if (SubscriptionStore.changeStatus(subscription.id, status)) {
+                            showFeedback("Tracking status updated")
+                        }
+                    },
+                    onRemoveSubscriptionClick = {
                         SubscriptionStore.remove(subscription.id)
                         navigator.navigateTo(SubybaraDestination.Subscriptions)
                         showFeedback("Subscription deleted")

@@ -1,6 +1,6 @@
 package com.subybara.app.core.model
 
-import java.text.ParseException
+import java.text.ParsePosition
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -46,18 +46,17 @@ fun formatDate(
 /**
  * Parses a stored date. Returns null if parsing fails.
  */
-fun parseDate(text: String): Long? =
-    try {
-        dateFormat(StoredDatePattern).parse(text)?.time
-    } catch (_: ParseException) {
-        null
-    }
+fun parseDate(text: String): Long? {
+    val position = ParsePosition(0)
+    val date = dateFormat(StoredDatePattern).parse(text, position)
+    return date?.takeIf { position.index == text.length }?.time
+}
 
 /**
  * Returns the number of days until [dateMillis], or a negative value for past dates.
  */
-fun daysUntil(dateMillis: Long): Int =
-    ((dateMillis - todayInMillis()) / MillisPerDay).toInt()
+fun daysUntil(dateMillis: Long, todayMillis: Long = todayInMillis()): Int =
+    ((dateMillis - todayMillis) / MillisPerDay).toInt()
 
 /**
  * Reformats a stored date. Returns [text] unchanged if parsing fails.

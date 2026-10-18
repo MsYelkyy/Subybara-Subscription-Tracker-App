@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -39,6 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +59,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -80,6 +84,7 @@ import com.subybara.app.core.designsystem.theme.SubybaraTheme
 import com.subybara.app.core.designsystem.theme.White
 import com.subybara.app.core.model.Subscription
 import com.subybara.app.core.model.SubscriptionStatus
+import com.subybara.app.core.model.formatSubscriptionAmount
 import com.subybara.app.core.model.reformatDate
 import com.subybara.app.navigation.SubybaraDestination
 import kotlinx.coroutines.Dispatchers
@@ -109,27 +114,7 @@ fun SubscriptionsScreen(
         mutableStateOf(SubscriptionFilter.All)
     }
 
-    val searchResults = subscriptions.filter { subscription ->
-        subscription.name.contains(
-            searchQuery.trim(),
-            ignoreCase = true
-        )
-    }
-
-    val visibleSubscriptions = searchResults.filter { subscription ->
-        when (selectedFilter) {
-            SubscriptionFilter.All -> true
-
-            SubscriptionFilter.Active ->
-                subscription.status == SubscriptionStatus.ACTIVE
-
-            SubscriptionFilter.Paused ->
-                subscription.status == SubscriptionStatus.PAUSED
-
-            SubscriptionFilter.Canceled ->
-                subscription.status == SubscriptionStatus.CANCELED
-        }
-    }
+    val visibleSubscriptions = filterSubscriptions(subscriptions, searchQuery, selectedFilter)
 
     Scaffold(
         modifier = modifier,
@@ -197,22 +182,68 @@ fun SubscriptionsScreen(
                     )
                 }
 
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    items(
-                        items = visibleSubscriptions,
-                        key = { subscription -> subscription.id }
-                    ) { subscription ->
-                        SubscriptionRow(
-                            subscription = subscription,
-                            onClick = { onSubscriptionClick(subscription) }
+                if (visibleSubscriptions.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            "No matching subscriptions",
+                            style = MaterialTheme.typography.titleMedium,
+                            textAlign = TextAlign.Center
                         )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            "No subscriptions match your search or status filter.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+
+                        // Offer to clear only when the user typed a search; a status chip
+                        // alone is changed by tapping another chip.
+                        if (searchQuery.isNotBlank()) {
+                            TextButton(onClick = {
+                                searchQuery = ""
+                                selectedFilter = SubscriptionFilter.All
+                            }) { Text("Clear Filters") }
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(
+                            items = visibleSubscriptions,
+                            key = { subscription -> subscription.id }
+                        ) { subscription ->
+                            SubscriptionRow(
+                                subscription = subscription,
+                                onClick = { onSubscriptionClick(subscription) }
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+internal fun filterSubscriptions(
+    subscriptions: List<Subscription>,
+    query: String,
+    filter: SubscriptionFilter
+): List<Subscription> = subscriptions.filter { subscription ->
+    subscription.name.contains(query.trim(), ignoreCase = true) && when (filter) {
+        SubscriptionFilter.All -> true
+        SubscriptionFilter.Active -> subscription.status == SubscriptionStatus.ACTIVE
+        SubscriptionFilter.Paused -> subscription.status == SubscriptionStatus.PAUSED
+        SubscriptionFilter.Canceled -> subscription.status == SubscriptionStatus.CANCELED
     }
 }
 
@@ -266,7 +297,7 @@ private fun EmptySubscriptionsState(
             SubybaraPrimaryButton(
                 text = "Add Subscription",
                 onClick = onAddSubscriptionClick,
-                modifier = Modifier.height(44.dp),
+                modifier = Modifier.heightIn(min = 48.dp),
                 shape = RoundedCornerShape(22.dp)
             )
 
@@ -275,7 +306,7 @@ private fun EmptySubscriptionsState(
     }
 }
 
-private enum class SubscriptionFilter(
+internal enum class SubscriptionFilter(
     val label: String
 ) {
     All("All"),
@@ -299,7 +330,8 @@ private fun SubscriptionSearchField(
         ),
         modifier = modifier
             .fillMaxWidth()
-            .height(40.dp)
+            .semantics { contentDescription = "Search subscriptions" }
+            .heightIn(min = 48.dp)
             .background(
                 color = Secondary200,
                 shape = RoundedCornerShape(20.dp)
@@ -307,8 +339,8 @@ private fun SubscriptionSearchField(
         decorationBox = { innerTextField ->
             Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 12.dp),
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -340,7 +372,7 @@ private fun SubscriptionFilterChips(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         SubscriptionFilter.entries.forEach { filter ->
@@ -423,7 +455,7 @@ private fun SubscriptionRow(
             horizontalAlignment = Alignment.End
         ) {
             Text(
-                text = "₱%,.2f".format(subscription.amount),
+                text = formatSubscriptionAmount(subscription.amount),
                 style = MaterialTheme.typography.labelMedium,
                 color = Primary900
             )

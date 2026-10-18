@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -126,7 +127,7 @@ fun DiscardChangesDialog(
             SubybaraPrimaryButton(
                 text = "Discard Changes",
                 onClick = onDiscardClick,
-                modifier = Modifier.height(44.dp),
+                modifier = Modifier.heightIn(min = 48.dp),
                 shape = WideButtonShape
             )
 
@@ -135,7 +136,7 @@ fun DiscardChangesDialog(
                 onClick = onKeepEditingClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(44.dp),
+                    .heightIn(min = 48.dp),
                 shape = WideButtonShape
             )
         }
@@ -167,7 +168,7 @@ fun SaveChangesDialog(
                 onClick = onYesClick,
                 modifier = Modifier
                     .width(80.dp)
-                    .height(44.dp),
+                    .heightIn(min = 48.dp),
                 shape = SmallButtonShape
             )
 
@@ -176,7 +177,7 @@ fun SaveChangesDialog(
                 onClick = onNoClick,
                 modifier = Modifier
                     .width(80.dp)
-                    .height(44.dp),
+                    .heightIn(min = 48.dp),
                 shape = SmallButtonShape
             )
         }
@@ -211,7 +212,7 @@ fun SubscriptionAddedDialog(
             onClick = onDoneClick,
             modifier = Modifier
                 .padding(top = 24.dp)
-                .height(44.dp),
+                .heightIn(min = 48.dp),
             shape = WideButtonShape
         )
     }
@@ -247,9 +248,9 @@ fun DeleteSubscriptionDialog(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             SubybaraPrimaryButton(
-                text = "Delete Subscription",
+                text = "Remove Subscription",
                 onClick = onDeleteClick,
-                modifier = Modifier.height(44.dp),
+                modifier = Modifier.heightIn(min = 48.dp),
                 shape = WideButtonShape,
                 containerColor = SubscriptionRed
             )
@@ -259,7 +260,7 @@ fun DeleteSubscriptionDialog(
                 onClick = onKeepClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(44.dp),
+                    .heightIn(min = 48.dp),
                 shape = WideButtonShape
             )
         }

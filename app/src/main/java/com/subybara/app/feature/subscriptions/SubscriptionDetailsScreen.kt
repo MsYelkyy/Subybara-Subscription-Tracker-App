@@ -10,11 +10,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,27 +46,31 @@ import com.subybara.app.core.designsystem.component.SubybaraCard
 import com.subybara.app.core.designsystem.theme.Neutral500
 import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.Primary600
+import com.subybara.app.core.designsystem.theme.Primary800
 import com.subybara.app.core.designsystem.theme.Primary900
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.designsystem.theme.White
 import com.subybara.app.core.model.Subscription
 import com.subybara.app.core.model.SubscriptionStatus
 import com.subybara.app.core.model.daysUntil
+import com.subybara.app.core.model.formatSubscriptionAmount
 import com.subybara.app.core.model.parseDate
 import com.subybara.app.core.model.reformatDate
 
 private val SubscriptionDetailsDivider = Color(0xFFF1EDDC)
 
-private val CancelSubscriptionBorder = Color(0xFFEEC5BF)
+private val RemoveSubscriptionBorder = Color(0xFFEEC5BF)
 
 /**
  * Shows subscription details.
  *
- * Calls [onCancelSubscriptionClick] after the user confirms removal.
+ * Calls [onRemoveSubscriptionClick] after the user confirms removal.
  *
  * @param subscription Subscription to show.
  * @param onBackClick Called when the back arrow is tapped.
  * @param onEditClick Called when the edit pencil is tapped.
- * @param onCancelSubscriptionClick Called after the user confirms removing the subscription.
+ * @param onRemoveSubscriptionClick Called after the user confirms removing the subscription.
+ * @param onStatusChange Updates the tracking status without contacting a provider.
  * @param modifier Modifier applied to the screen.
  */
 @Composable
@@ -71,7 +78,8 @@ fun SubscriptionDetailsScreen(
     subscription: Subscription,
     onBackClick: () -> Unit,
     onEditClick: () -> Unit,
-    onCancelSubscriptionClick: () -> Unit,
+    onRemoveSubscriptionClick: () -> Unit,
+    onStatusChange: (SubscriptionStatus) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
@@ -177,22 +185,88 @@ fun SubscriptionDetailsScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedButton(
-                    onClick = { showDeleteDialog = true },
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_info),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = Primary600
+                    )
+
+                    Text(
+                        text = "These actions only update your tracker.\nManage payments with your provider.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Neutral500
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                Button(
+                    onClick = {
+                        onStatusChange(
+                            if (subscription.status == SubscriptionStatus.ACTIVE)
+                                SubscriptionStatus.PAUSED else SubscriptionStatus.ACTIVE
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp),
+                        .heightIn(min = 48.dp),
                     shape = RoundedCornerShape(20.dp),
-                    contentPadding = PaddingValues(12.dp),
-                    border = BorderStroke(0.76.dp, CancelSubscriptionBorder),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = SubscriptionRed
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Primary600,
+                        contentColor = White
                     )
                 ) {
-                    Text(
-                        text = "Cancel Subscription",
-                        style = MaterialTheme.typography.labelLarge
+                    ActionContent(
+                        icon = if (subscription.status == SubscriptionStatus.ACTIVE)
+                            R.drawable.ic_pause else R.drawable.ic_play,
+                        text = when (subscription.status) {
+                            SubscriptionStatus.ACTIVE -> "Pause Subscription"
+                            SubscriptionStatus.PAUSED -> "Resume Subscription"
+                            SubscriptionStatus.CANCELED -> "Mark as Active"
+                        }
                     )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (subscription.status != SubscriptionStatus.CANCELED) {
+                        OutlinedButton(
+                            onClick = { onStatusChange(SubscriptionStatus.CANCELED) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp),
+                            border = BorderStroke(1.dp, Primary600),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Primary800
+                            )
+                        ) {
+                            ActionContent(icon = R.drawable.ic_block, text = "Mark as Canceled")
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp),
+                        border = BorderStroke(0.76.dp, RemoveSubscriptionBorder),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = SubscriptionRed
+                        )
+                    ) {
+                        ActionContent(icon = R.drawable.ic_delete, text = "Remove Subscription")
+                    }
                 }
             }
         }
@@ -205,10 +279,31 @@ fun SubscriptionDetailsScreen(
                 // Prevent duplicate removal on repeated taps.
                 if (showDeleteDialog) {
                     showDeleteDialog = false
-                    onCancelSubscriptionClick()
+                    onRemoveSubscriptionClick()
                 }
             },
             onKeepClick = { showDeleteDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun ActionContent(icon: Int, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -221,17 +316,20 @@ private fun SubscriptionStatusLabel(status: SubscriptionStatus) {
         SubscriptionStatus.PAUSED -> "Paused"
         SubscriptionStatus.CANCELED -> "Canceled"
     }
+    val icon = when (status) {
+        SubscriptionStatus.ACTIVE -> R.drawable.ic_check_circle
+        SubscriptionStatus.PAUSED -> R.drawable.ic_pause_circle
+        SubscriptionStatus.CANCELED -> R.drawable.ic_cancel_circle
+    }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-        if (isActive) {
-            Icon(
-                painter = painterResource(R.drawable.ic_check_circle),
-                contentDescription = null,
-                tint = Color.Unspecified
-            )
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = Color.Unspecified
+        )
 
-            Spacer(modifier = Modifier.width(4.dp))
-        }
+        Spacer(modifier = Modifier.width(4.dp))
 
         Text(
             text = label,
@@ -262,7 +360,7 @@ private fun BillingSummaryCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "₱%,.2f".format(subscription.amount),
+                    text = formatSubscriptionAmount(subscription.amount),
                     style = MaterialTheme.typography.titleLarge,
                     color = Primary900
                 )
@@ -278,7 +376,7 @@ private fun BillingSummaryCard(
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "Next billing on",
+                    text = if (subscription.status == SubscriptionStatus.ACTIVE) "Next billing on" else "Recorded billing date",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 11.sp,
                         lineHeight = 12.sp
@@ -373,7 +471,8 @@ private fun SubscriptionDetailsScreenPreview() {
             },
             onBackClick = {},
             onEditClick = {},
-            onCancelSubscriptionClick = {}
+            onRemoveSubscriptionClick = {},
+            onStatusChange = {}
         )
     }
 }

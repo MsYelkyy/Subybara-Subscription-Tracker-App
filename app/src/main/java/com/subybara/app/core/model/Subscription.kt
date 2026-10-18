@@ -37,3 +37,5 @@ data class Subscription(
     val notes: String = "",
     val logoUri: String? = null
 )
+// Peso display shared by subscription list and details.
+fun formatSubscriptionAmount(amount: Double): String = "\u20B1%,.2f".format(java.util.Locale.US, amount)
