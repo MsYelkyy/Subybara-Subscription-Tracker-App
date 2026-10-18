@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +53,7 @@ fun SignUpScreen(
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var showSuccessDialog by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier
@@ -87,7 +90,7 @@ fun SignUpScreen(
                 value = name,
                 onValueChange = {
                     name = it
-                    errorMessage = null
+                    if (errorMessage != null) errorMessage = null
                 },
                 placeholder = "Full name",
                 singleLine = true
@@ -100,7 +103,7 @@ fun SignUpScreen(
                 value = email,
                 onValueChange = {
                     email = it
-                    errorMessage = null
+                    if (errorMessage != null) errorMessage = null
                 },
                 placeholder = "Email address",
                 singleLine = true
@@ -113,7 +116,7 @@ fun SignUpScreen(
                 value = password,
                 onValueChange = {
                     password = it
-                    errorMessage = null
+                    if (errorMessage != null) errorMessage = null
                 },
                 placeholder = "Password",
                 singleLine = true,
@@ -136,10 +139,27 @@ fun SignUpScreen(
             SubybaraPrimaryButton(
                 text = "Sign Up",
                 onClick = {
-                    if (name.isBlank() || email.isBlank() || password.isBlank()) {
-                        errorMessage = "Please fill in all required fields."
-                    } else {
-                        onSignUpSuccess()
+                    val trimmedName = name.trim()
+                    val trimmedEmail = email.trim()
+                    val emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$".toRegex()
+
+                    when {
+                        trimmedName.isBlank() || trimmedEmail.isBlank() || password.isBlank() -> {
+                            errorMessage = "Please fill in all required fields."
+                        }
+                        !trimmedName.all { it.isLetter() || it.isWhitespace() || it == '\'' || it == '-' } -> {
+                            errorMessage = "Name cannot contain numbers or special symbols."
+                        }
+                        !trimmedEmail.matches(emailRegex) -> {
+                            errorMessage = "Please enter a valid email address."
+                        }
+                        password.length < 6 -> {
+                            errorMessage = "Password must be at least 6 characters."
+                        }
+                        else -> {
+                            errorMessage = null
+                            showSuccessDialog = true
+                        }
                     }
                 }
             )
@@ -152,6 +172,32 @@ fun SignUpScreen(
                 color = Primary600
             )
         }
+    }
+
+    // Confirmation dialog for successful registration
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showSuccessDialog = false
+                onSignUpSuccess()
+            },
+            title = {
+                Text(text = "Account Created!")
+            },
+            text = {
+                Text(text = "Your account has been successfully created. You can now sign in.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSuccessDialog = false
+                        onSignUpSuccess()
+                    }
+                ) {
+                    Text(text = "Proceed to Sign In")
+                }
+            }
+        )
     }
 }
 

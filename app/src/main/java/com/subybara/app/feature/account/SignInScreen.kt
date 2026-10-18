@@ -1,5 +1,6 @@
 package com.subybara.app.feature.account
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -34,15 +36,6 @@ import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.Secondary200
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
 
-/**
- * Sign In screen allowing existing users to enter the app using demo credentials.
- *
- * @param onSignInSuccess Called when sign in succeeds and navigates to the dashboard/home.
- * @param onForgotPasswordClick Called when the user taps "Forgot Password".
- * @param onSignUpClick Called when the user taps to navigate to Sign Up.
- * @param onBackClick Called when the user taps back.
- * @param modifier Modifier applied to the root layout.
- */
 @Composable
 fun SignInScreen(
     onSignInSuccess: () -> Unit,
@@ -54,6 +47,8 @@ fun SignInScreen(
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val context = LocalContext.current
 
     Scaffold(
         modifier = modifier
@@ -126,10 +121,17 @@ fun SignInScreen(
             SubybaraPrimaryButton(
                 text = "Sign In",
                 onClick = {
-                    if (email.isBlank() || password.isBlank()) {
+                    val inputEmail = email.trim()
+                    val isEmailValid = inputEmail.contains("@") && inputEmail.contains(".") && inputEmail.length > 5
+
+                    if (inputEmail.isEmpty() || password.isEmpty()) {
                         errorMessage = "Please enter both email and password."
+                        Toast.makeText(context, "Please enter both email and password.", Toast.LENGTH_SHORT).show()
+                    } else if (!isEmailValid) {
+                        errorMessage = "Please enter a valid email address (e.g. name@domain.com)."
+                        Toast.makeText(context, "Invalid email format!", Toast.LENGTH_SHORT).show()
                     } else {
-                        // Demo authentication validation per spec
+                        errorMessage = null
                         onSignInSuccess()
                     }
                 }
