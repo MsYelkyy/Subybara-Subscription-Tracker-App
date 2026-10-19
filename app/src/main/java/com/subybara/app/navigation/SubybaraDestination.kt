@@ -19,6 +19,18 @@ sealed interface SubybaraDestination {
         override val route: String = "subscriptions"
     }
 
+    data object SubscriptionDetails : SubybaraDestination {
+        override val route: String = "subscription_details"
+    }
+
+    data object AddSubscription : SubybaraDestination {
+        override val route: String = "add_subscription"
+    }
+
+    data object EditSubscription : SubybaraDestination {
+        override val route: String = "edit_subscription"
+    }
+
     data object Renewals : SubybaraDestination {
         override val route: String = "renewals"
     }
@@ -45,6 +57,9 @@ sealed interface SubybaraDestination {
             SignIn,
             Home,
             Subscriptions,
+            SubscriptionDetails,
+            AddSubscription,
+            EditSubscription,
             Renewals,
             Insights,
             Profile,

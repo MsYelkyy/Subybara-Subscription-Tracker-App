@@ -2,11 +2,10 @@ package com.subybara.app.core.designsystem.theme
 
 import androidx.compose.ui.graphics.Color
 
-//Base
+// Base
 val White = Color(0xFFFFFFFF)
 val OffWhite = Color(0xFFFFFDF8)
 val CardBorder = Color(0xFFF3F1E7)
-
 
 // Primary - Bright Green
 val Primary50 = Color(0xFFF8FFF1)
