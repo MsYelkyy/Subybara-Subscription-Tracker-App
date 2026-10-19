@@ -18,27 +18,34 @@ object SubscriptionStore {
             name = "Spotify Premium",
             amount = 149.00,
             billingCycle = "Monthly",
-            renewalDate = "October 29",
+            renewalDate = "October 29, 2026",
             category = SubscriptionCategory.MUSIC,
-            status = SubscriptionStatus.ACTIVE
+            status = SubscriptionStatus.ACTIVE,
+            paymentMethod = "Credit Card",
+            startDate = "March 29, 2024"
         ),
         Subscription(
             id = 2,
             name = "Netflix",
             amount = 549.00,
             billingCycle = "Monthly",
-            renewalDate = "November 1",
+            renewalDate = "November 1, 2026",
             category = SubscriptionCategory.ENTERTAINMENT,
-            status = SubscriptionStatus.ACTIVE
+            status = SubscriptionStatus.ACTIVE,
+            paymentMethod = "GCash",
+            startDate = "January 24, 2023",
+            notes = "All apps plan"
         ),
         Subscription(
             id = 3,
             name = "YouTube Premium",
             amount = 159.00,
             billingCycle = "Monthly",
-            renewalDate = "November 8",
+            renewalDate = "November 8, 2026",
             category = SubscriptionCategory.MUSIC,
-            status = SubscriptionStatus.ACTIVE
+            status = SubscriptionStatus.ACTIVE,
+            paymentMethod = "Maya",
+            startDate = "August 8, 2025"
         )
     )
 
@@ -86,6 +93,12 @@ object SubscriptionStore {
 
         _subscriptions[index] = updatedSubscription
         return true
+    }
+
+    /** Updates tracking status only; it does not contact the provider. */
+    fun changeStatus(subscriptionId: Int, status: SubscriptionStatus): Boolean {
+        val subscription = findById(subscriptionId) ?: return false
+        return update(subscription.copy(status = status))
     }
 
     /**

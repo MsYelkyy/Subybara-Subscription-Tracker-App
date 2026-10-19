@@ -31,5 +31,11 @@ data class Subscription(
     val billingCycle: String,
     val renewalDate: String,
     val category: SubscriptionCategory,
-    val status: SubscriptionStatus
+    val status: SubscriptionStatus,
+    val paymentMethod: String = "",
+    val startDate: String = "",
+    val notes: String = "",
+    val logoUri: String? = null
 )
+// Peso display shared by subscription list and details.
+fun formatSubscriptionAmount(amount: Double): String = "\u20B1%,.2f".format(java.util.Locale.US, amount)
