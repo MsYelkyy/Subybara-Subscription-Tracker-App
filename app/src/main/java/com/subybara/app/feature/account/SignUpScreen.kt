@@ -1,6 +1,7 @@
 package com.subybara.app.feature.account
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,11 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,10 +27,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
 import com.subybara.app.core.designsystem.component.SubybaraTextAction
+import com.subybara.app.core.designsystem.theme.CardBorder
 import com.subybara.app.core.designsystem.theme.Neutral500
 import com.subybara.app.core.designsystem.theme.Neutral800
+import com.subybara.app.core.designsystem.theme.OffWhite
 import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.Secondary200
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
@@ -174,84 +176,113 @@ fun SignUpScreen(
         }
     }
 
-    // Confirmation dialog for successful registration
+    // Custom Subybara Styled Confirmation Dialog
     if (showSuccessDialog) {
-        AlertDialog(
+        Dialog(
             onDismissRequest = {
                 showSuccessDialog = false
                 onSignUpSuccess()
-            },
-            title = {
-                Text(text = "Account Created!")
-            },
-            text = {
-                Text(text = "Your account has been successfully created. You can now sign in.")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showSuccessDialog = false
-                        onSignUpSuccess()
-                    }
+            }
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = OffWhite,
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = CardBorder,
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                    .padding(24.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = "Proceed to Sign In")
+                    Text(
+                        text = "Account Created!",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Neutral800,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Your account has been successfully created. You can now sign in.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Neutral500,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    SubybaraPrimaryButton(
+                        text = "Proceed to Sign In",
+                        onClick = {
+                            showSuccessDialog = false
+                            onSignUpSuccess()
+                        }
+                    )
                 }
             }
-        )
+        }
     }
 }
 
 @Composable
 private fun AccountTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    modifier: Modifier = Modifier,
-    singleLine: Boolean = true,
-    visualTransformation: VisualTransformation = VisualTransformation.None
-) {
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        singleLine = singleLine,
-        visualTransformation = visualTransformation,
-        textStyle = MaterialTheme.typography.bodyMedium.copy(
-            color = Neutral800
-        ),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .background(
-                color = Secondary200,
-                shape = RoundedCornerShape(15.dp)
+        value: String,
+        onValueChange: (String) -> Unit,
+        placeholder: String,
+        modifier: Modifier = Modifier,
+        singleLine: Boolean = true,
+        visualTransformation: VisualTransformation = VisualTransformation.None
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = singleLine,
+            visualTransformation = visualTransformation,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                color = Neutral800
             ),
-        decorationBox = { innerTextField ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                if (value.isEmpty()) {
-                    Text(
-                        text = placeholder,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Neutral500
-                    )
+            modifier = modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .background(
+                    color = Secondary200,
+                    shape = RoundedCornerShape(15.dp)
+                ),
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Neutral500
+                        )
+                    }
+                    innerTextField()
                 }
-                innerTextField()
             }
-        }
-    )
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun SignUpScreenPreview() {
-    SubybaraTheme {
-        SignUpScreen(
-            onSignUpSuccess = {},
-            onSignInClick = {}
         )
     }
-}
+
+    @Preview(showBackground = true, showSystemUi = true)
+    @Composable
+    private fun SignUpScreenPreview() {
+        SubybaraTheme {
+            SignUpScreen(
+                onSignUpSuccess = {},
+                onSignInClick = {}
+            )
+        }
+    }
