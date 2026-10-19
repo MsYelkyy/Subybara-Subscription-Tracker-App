@@ -8,14 +8,20 @@ private val LightColorScheme = lightColorScheme(
     // Main brand color
     primary = Primary600,
     onPrimary = White,
+    primaryContainer = Primary250,
+    onPrimaryContainer = Primary900,
 
-    // Supporting green
+    // Supporting container / pill background
     secondary = Primary300,
     onSecondary = Neutral800,
+    secondaryContainer = Secondary200,
+    onSecondaryContainer = Primary600,
 
     // Accent yellow
     tertiary = Tertiary500,
     onTertiary = Neutral900,
+    tertiaryContainer = Tertiary150,
+    onTertiaryContainer = Tertiary900,
 
     // Main screen background
     background = Tertiary100,
