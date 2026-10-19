@@ -17,8 +17,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.subybara.app.core.data.SubscriptionStore
+import com.subybara.app.feature.account.ForgotPasswordScreen
+import com.subybara.app.feature.account.SignInScreen
+import com.subybara.app.feature.account.SignUpScreen
 import com.subybara.app.feature.account.WelcomeScreen
 import com.subybara.app.feature.home.HomeScreen
+import com.subybara.app.feature.profile.ProfileScreen
 import com.subybara.app.feature.subscriptions.AddSubscriptionScreen
 import com.subybara.app.feature.subscriptions.EditSubscriptionScreen
 import com.subybara.app.feature.subscriptions.SubscriptionDetailsScreen
@@ -42,7 +46,8 @@ fun SubybaraNavHost() {
 
     val onMainDestinationClick: (SubybaraDestination) -> Unit = { destination ->
         if (destination == SubybaraDestination.Home ||
-            destination == SubybaraDestination.Subscriptions
+            destination == SubybaraDestination.Subscriptions ||
+            destination == SubybaraDestination.Profile
         ) {
             navigator.navigateTo(destination)
         }
@@ -97,6 +102,27 @@ fun SubybaraNavHost() {
 
     Box(modifier = Modifier.fillMaxSize()) {
         when (destination) {
+            SubybaraDestination.Welcome -> WelcomeScreen(
+                onGetStartedClick = { navigator.navigateTo(SubybaraDestination.Home) },
+                onSignInClick = { navigator.navigateTo(SubybaraDestination.SignIn) }
+            )
+
+            SubybaraDestination.SignIn -> SignInScreen(
+                onSignInSuccess = { navigator.navigateTo(SubybaraDestination.Home) },
+                onForgotPasswordClick = { navigator.navigateTo(SubybaraDestination.ForgotPassword) },
+                onSignUpClick = { navigator.navigateTo(SubybaraDestination.SignUp) },
+                onBackClick = { navigator.navigateTo(SubybaraDestination.Welcome) }
+            )
+
+            SubybaraDestination.SignUp -> SignUpScreen(
+                onSignUpSuccess = { navigator.navigateTo(SubybaraDestination.SignIn) },
+                onSignInClick = { navigator.navigateTo(SubybaraDestination.SignIn) }
+            )
+
+            SubybaraDestination.ForgotPassword -> ForgotPasswordScreen(
+                onBackToSignIn = { navigator.navigateTo(SubybaraDestination.SignIn) }
+            )
+
             SubybaraDestination.Home -> HomeScreen(
                 onDestinationClick = onMainDestinationClick,
                 onAddSubscriptionClick = onAddSubscriptionClick
@@ -151,6 +177,12 @@ fun SubybaraNavHost() {
                     }
                 )
             }
+
+            SubybaraDestination.Profile -> ProfileScreen(
+                onDestinationClick = onMainDestinationClick,
+                onAddSubscriptionClick = onAddSubscriptionClick,
+                onSignOutClick = { navigator.navigateTo(SubybaraDestination.Welcome) }
+            )
 
             else -> WelcomeScreen(
                 onGetStartedClick = { navigator.navigateTo(SubybaraDestination.Home) },

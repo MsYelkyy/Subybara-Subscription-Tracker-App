@@ -1,0 +1,214 @@
+package com.subybara.app.feature.account
+
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
+import com.subybara.app.core.designsystem.component.SubybaraTextAction
+import com.subybara.app.core.designsystem.theme.Neutral500
+import com.subybara.app.core.designsystem.theme.Neutral800
+import com.subybara.app.core.designsystem.theme.Primary600
+import com.subybara.app.core.designsystem.theme.Secondary200
+import com.subybara.app.core.designsystem.theme.SubybaraTheme
+
+@Composable
+fun SignInScreen(
+    onSignInSuccess: () -> Unit,
+    onForgotPasswordClick: () -> Unit,
+    onSignUpClick: () -> Unit,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val context = LocalContext.current
+
+    Scaffold(
+        modifier = modifier
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.background)
+                .padding(innerPadding)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Welcome Back",
+                style = MaterialTheme.typography.titleLarge,
+                color = Neutral800,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Enter your credentials to access your subscriptions",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Neutral500,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Email Field
+            AccountTextField(
+                value = email,
+                onValueChange = {
+                    email = it
+                    errorMessage = null
+                },
+                placeholder = "Email address",
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Password Field
+            AccountTextField(
+                value = password,
+                onValueChange = {
+                    password = it
+                    errorMessage = null
+                },
+                placeholder = "Password",
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation()
+            )
+
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = errorMessage!!,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            SubybaraPrimaryButton(
+                text = "Sign In",
+                onClick = {
+                    val inputEmail = email.trim()
+                    val isEmailValid = inputEmail.contains("@") && inputEmail.contains(".") && inputEmail.length > 5
+
+                    if (inputEmail.isEmpty() || password.isEmpty()) {
+                        errorMessage = "Please enter both email and password."
+                        Toast.makeText(context, "Please enter both email and password.", Toast.LENGTH_SHORT).show()
+                    } else if (!isEmailValid) {
+                        errorMessage = "Please enter a valid email address (e.g. name@domain.com)."
+                        Toast.makeText(context, "Invalid email format!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        errorMessage = null
+                        onSignInSuccess()
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SubybaraTextAction(
+                text = "Forgot Password?",
+                onClick = onForgotPasswordClick,
+                color = Primary600
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SubybaraTextAction(
+                text = "Don't have an account? Sign Up",
+                onClick = onSignUpClick,
+                color = Primary600
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccountTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = true,
+    visualTransformation: VisualTransformation = VisualTransformation.None
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = singleLine,
+        visualTransformation = visualTransformation,
+        textStyle = MaterialTheme.typography.bodyMedium.copy(
+            color = Neutral800
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .background(
+                color = Secondary200,
+                shape = RoundedCornerShape(15.dp)
+            ),
+        decorationBox = { innerTextField ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Neutral500
+                    )
+                }
+                innerTextField()
+            }
+        }
+    )
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun SignInScreenPreview() {
+    SubybaraTheme {
+        SignInScreen(
+            onSignInSuccess = {},
+            onForgotPasswordClick = {},
+            onSignUpClick = {},
+            onBackClick = {}
+        )
+    }
+}
