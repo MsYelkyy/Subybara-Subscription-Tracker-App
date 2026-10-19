@@ -8,6 +8,8 @@ import androidx.compose.runtime.setValue
 import com.subybara.app.core.data.SubscriptionStore
 import com.subybara.app.feature.account.WelcomeScreen
 import com.subybara.app.feature.home.HomeScreen
+import com.subybara.app.feature.insights.InsightsScreen
+import com.subybara.app.feature.renewals.UpcomingRenewalsScreen
 import com.subybara.app.feature.subscriptions.SubscriptionsScreen
 
 @Composable
@@ -16,23 +18,33 @@ fun SubybaraNavHost() {
     val navigator = DestinationNavigator { destination -> currentRoute = destination.route }
 
     val onMainDestinationClick: (SubybaraDestination) -> Unit = { destination ->
-        if (destination == SubybaraDestination.Home ||
-            destination == SubybaraDestination.Subscriptions
-        ) {
-            navigator.navigateTo(destination)
-        }
+        navigator.navigateTo(destination)
     }
 
     when (SubybaraDestination.fromRoute(currentRoute)) {
         SubybaraDestination.Home -> HomeScreen(
+            subscriptions = SubscriptionStore.subscriptions,
             onDestinationClick = onMainDestinationClick,
-            onAddSubscriptionClick = {}
+            onAddSubscriptionClick = {},
+            onViewAllRenewalsClick = { navigator.navigateTo(SubybaraDestination.Renewals) },
+            onSelectSubscription = { // Navigate to detail screen when ready
+            }
         )
 
         SubybaraDestination.Subscriptions -> SubscriptionsScreen(
             subscriptions = SubscriptionStore.subscriptions,
             onDestinationClick = onMainDestinationClick,
             onAddSubscriptionClick = {}
+        )
+
+        SubybaraDestination.Renewals -> UpcomingRenewalsScreen(
+            subscriptions = SubscriptionStore.subscriptions,
+            onNavigateBack = { navigator.navigateTo(SubybaraDestination.Home) }
+        )
+
+        SubybaraDestination.Insights -> InsightsScreen(
+            subscriptions = SubscriptionStore.subscriptions,
+            onDestinationClick = onMainDestinationClick
         )
 
         else -> WelcomeScreen(

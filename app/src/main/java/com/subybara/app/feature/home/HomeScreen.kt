@@ -157,7 +157,7 @@ private fun HomeHeader() {
         IconButton(onClick = {}) {
             Icon(
                 painter = painterResource(R.drawable.ic_search),
-                contentDescription = "Notifications",
+                contentDescription = "Search",
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
@@ -237,7 +237,7 @@ private fun OverviewMetricsCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Active Subscription",
+                        text = "Active Subscriptions",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                     )
