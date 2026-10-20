@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.subybara.app.core.data.AccountStore
 import com.subybara.app.core.designsystem.component.SubybaraBottomBar
 import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
 import com.subybara.app.core.designsystem.theme.Neutral500
@@ -42,15 +43,17 @@ fun ProfileScreen(
     onDestinationClick: (SubybaraDestination) -> Unit,
     onAddSubscriptionClick: () -> Unit,
     onSignOutClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
+    val user = AccountStore.currentUser
+
     Scaffold(
         modifier = modifier,
         bottomBar = {
             SubybaraBottomBar(
                 selectedDestination = SubybaraDestination.Profile,
                 onDestinationClick = onDestinationClick,
-                onAddSubscriptionClick = onAddSubscriptionClick
+                onAddSubscriptionClick = onAddSubscriptionClick,
             )
         }
     ) { innerPadding ->
@@ -71,7 +74,7 @@ fun ProfileScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "H",
+                    text = user.initial,
                     style = MaterialTheme.typography.titleLarge,
                     color = Primary900
                 )
@@ -80,7 +83,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Harty User",
+                text = user.name,
                 style = MaterialTheme.typography.titleLarge,
                 color = Neutral800,
                 textAlign = TextAlign.Center
@@ -89,7 +92,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "harty@subybara.com",
+                text = user.email,
                 style = MaterialTheme.typography.bodyMedium,
                 color = Neutral500,
                 textAlign = TextAlign.Center
@@ -99,7 +102,7 @@ fun ProfileScreen(
 
             SubybaraPrimaryButton(
                 text = "Sign Out",
-                onClick = onSignOutClick
+                onClick = onSignOutClick,
             )
         }
     }
@@ -112,7 +115,7 @@ private fun ProfileScreenPreview() {
         ProfileScreen(
             onDestinationClick = {},
             onAddSubscriptionClick = {},
-            onSignOutClick = {}
+            onSignOutClick = {},
         )
     }
 }
