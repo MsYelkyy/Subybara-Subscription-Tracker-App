@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.subybara.app.core.data.AccountStore
 import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
 import com.subybara.app.core.designsystem.component.SubybaraTextAction
 import com.subybara.app.core.designsystem.theme.CardBorder
@@ -160,6 +161,7 @@ fun SignUpScreen(
                         }
                         else -> {
                             errorMessage = null
+                            AccountStore.updateUser(trimmedName, trimmedEmail)
                             showSuccessDialog = true
                         }
                     }
