@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -157,8 +158,8 @@ fun WelcomeScreen(
                         horizontal = horizontalPadding
                     )
                     .fillMaxWidth()
-                    .height(
-                        WelcomeDimens.ButtonHeight.scaledDp(designScale)
+                    .heightIn(
+                        min = WelcomeDimens.ButtonHeight.scaledDp(designScale)
                     ),
                 shape = RoundedCornerShape(
                     WelcomeDimens.ButtonRadius.scaledDp(designScale)

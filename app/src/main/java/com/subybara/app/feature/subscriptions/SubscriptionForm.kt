@@ -1,5 +1,8 @@
 package com.subybara.app.feature.subscriptions
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -32,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
@@ -59,11 +63,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -194,11 +202,13 @@ internal fun SubscriptionForm(
     ) != initialValues
 
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
 
     val pickLogo = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
+            keepLogoAccess(context, uri)
             logoUri = uri.toString()
         }
     }
@@ -432,10 +442,27 @@ private fun FormTopBar(
 
         Text(
             text = title,
-            modifier = Modifier.align(Alignment.Center),
+            modifier = Modifier
+                .align(Alignment.Center)
+                .semantics { heading() },
             style = MaterialTheme.typography.titleLarge,
             color = Neutral800
         )
+    }
+}
+
+/**
+ * Keeps read access to a picked logo after the screen that picked it closes.
+ * Without this, the logo can no longer be loaded once the user leaves the app.
+ * Pickers that do not offer lasting access are ignored.
+ */
+private fun keepLogoAccess(context: Context, uri: Uri) {
+    try {
+        context.contentResolver.takePersistableUriPermission(
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
+        )
+    } catch (_: SecurityException) {
     }
 }
 
@@ -584,7 +611,9 @@ private fun FormFieldCard(
                 if (error != null) {
                     Text(
                         text = error,
-                        modifier = Modifier.padding(top = 4.dp),
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .semantics { liveRegion = LiveRegionMode.Polite },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -611,7 +640,7 @@ private fun FieldValueText(
         text = text,
         style = fieldValueStyle(),
         color = if (isPlaceholder) Neutral500 else Neutral950,
-        maxLines = 1,
+        maxLines = 2,
         overflow = TextOverflow.Ellipsis
     )
 }
@@ -774,9 +803,14 @@ private fun BillingCycleChip(
             text = text,
             style = MaterialTheme.typography.bodySmall,
             color = if (selected) White else Neutral800,
+            modifier = Modifier.padding(horizontal = 4.dp),
             maxLines = 1,
             softWrap = false,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = 6.sp,
+                maxFontSize = MaterialTheme.typography.bodySmall.fontSize
+            )
         )
     }
 }

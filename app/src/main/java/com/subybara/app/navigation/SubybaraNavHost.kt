@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -16,8 +17,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import com.subybara.app.core.data.SubscriptionStore
+import com.subybara.app.core.model.RenewalReminderDays
 import com.subybara.app.core.model.Subscription
+import com.subybara.app.core.model.upcomingRenewals
 import com.subybara.app.feature.account.ForgotPasswordScreen
 import com.subybara.app.feature.account.SignInScreen
 import com.subybara.app.feature.account.SignUpScreen
@@ -35,7 +39,10 @@ import com.subybara.app.feature.subscriptions.SubscriptionsScreen
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.milliseconds
+
+private const val MessageMillis = 2_000L
+private const val UndoMessageMillis = 5_000L
 
 @Composable
 fun SubybaraNavHost() {
@@ -47,6 +54,10 @@ fun SubybaraNavHost() {
     var subscriptionDetailsOrigin by rememberSaveable {
         mutableStateOf(SubybaraDestination.Subscriptions.route)
     }
+    var seenReminderKeys by rememberSaveable { mutableStateOf(emptyList<String>()) }
+
+    val reminders = SubscriptionStore.subscriptions.upcomingRenewals(withinDays = RenewalReminderDays)
+    val hasUnreadReminders = reminders.any { reminder -> reminder.reminderKey !in seenReminderKeys }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -76,11 +87,31 @@ fun SubybaraNavHost() {
 
     // Replace the current message so repeated taps don't queue old snackbars.
     var feedbackJob by remember { mutableStateOf<Job?>(null) }
-    val showFeedback: (String) -> Unit = { message ->
+    val accessibilityManager = LocalAccessibilityManager.current
+    fun showFeedback(
+        message: String,
+        actionLabel: String? = null,
+        onAction: () -> Unit = {}
+    ) {
+        val visibleMillis = if (actionLabel == null) MessageMillis else UndoMessageMillis
+        val timeoutMillis = accessibilityManager?.calculateRecommendedTimeoutMillis(
+            originalTimeoutMillis = visibleMillis,
+            containsIcons = true,
+            containsText = true,
+            containsControls = actionLabel != null
+        ) ?: visibleMillis
+
         feedbackJob?.cancel()
         feedbackJob = coroutineScope.launch {
-            withTimeoutOrNull(2.seconds) {
-                snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Indefinite)
+            val result = withTimeoutOrNull(timeoutMillis.milliseconds) {
+                snackbarHostState.showSnackbar(
+                    message = message,
+                    actionLabel = actionLabel,
+                    duration = SnackbarDuration.Indefinite
+                )
+            }
+            if (result == SnackbarResult.ActionPerformed) {
+                onAction()
             }
         }
     }
@@ -161,7 +192,12 @@ fun SubybaraNavHost() {
                 onAddSubscriptionClick = onAddSubscriptionClick,
                 onViewAllRenewalsClick = { navigator.navigateTo(SubybaraDestination.Renewals) },
                 onSelectSubscription = onSubscriptionClick,
-                onNotificationsClick = { navigator.navigateTo(SubybaraDestination.Notifications) }
+                onNotificationsClick = {
+                    seenReminderKeys = (seenReminderKeys + reminders.map { reminder -> reminder.reminderKey })
+                        .distinct()
+                    navigator.navigateTo(SubybaraDestination.Notifications)
+                },
+                hasUnreadNotifications = hasUnreadReminders
             )
 
             SubybaraDestination.Subscriptions -> SubscriptionsScreen(
@@ -184,9 +220,19 @@ fun SubybaraNavHost() {
                         }
                     },
                     onRemoveSubscriptionClick = {
+                        val position = SubscriptionStore.subscriptions.indexOfFirst { item ->
+                            item.id == subscription.id
+                        }
                         SubscriptionStore.remove(subscription.id)
                         navigator.navigateTo(SubybaraDestination.fromRoute(subscriptionDetailsOrigin))
-                        showFeedback("Subscription deleted")
+                        showFeedback(
+                            message = "Subscription deleted",
+                            actionLabel = "Undo",
+                            onAction = {
+                                SubscriptionStore.restore(subscription, position)
+                                showFeedback("Subscription restored")
+                            }
+                        )
                     }
                 )
             }
@@ -226,6 +272,8 @@ fun SubybaraNavHost() {
             )
 
             SubybaraDestination.Notifications -> NotificationsScreen(
+                reminders = reminders,
+                onReminderClick = onSubscriptionClick,
                 onBackClick = { navigator.navigateTo(SubybaraDestination.Home) }
             )
 

@@ -29,6 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,8 +42,11 @@ import com.subybara.app.core.designsystem.component.SubybaraCard
 import com.subybara.app.core.designsystem.theme.CardBorder
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
 import com.subybara.app.core.model.Subscription
+import com.subybara.app.core.model.formatSubscriptionAmount
+import com.subybara.app.core.model.spendByCategory
+import com.subybara.app.core.model.spendDueThisMonth
+import com.subybara.app.core.model.totalMonthlySpend
 import com.subybara.app.navigation.SubybaraDestination
-import java.util.Locale
 
 private val CategoryPalette = listOf(
     Color(0xFF7E9B63),
@@ -57,26 +62,29 @@ private val CategoryTrackColor = Color(0xFFF1EDDC)
 /**
  * Insights screen displaying subscription spending summaries and nested category breakdowns.
  *
- * @param subscriptions List of user subscriptions, defaults to [SubscriptionStore.subscriptions].
+ * @param subscriptions List of user subscriptions, usually [SubscriptionStore.subscriptions].
  * @param modifier Applied to root layout.
  * @param onDestinationClick Callback for bottom bar navigation taps.
  * @param onAddSubscriptionClick Callback for center add button tap.
  */
 @Composable
 fun InsightsScreen(
-    subscriptions: List<Subscription> = SubscriptionStore.subscriptions,
+    subscriptions: List<Subscription>,
     modifier: Modifier = Modifier,
     onDestinationClick: (SubybaraDestination) -> Unit = {},
     onAddSubscriptionClick: () -> Unit = {}
 ) {
-    val totalMonthlySpend = subscriptions.sumOf { it.amount }
+    val totalMonthlySpend = subscriptions.totalMonthlySpend()
+    val spendThisMonth = subscriptions.spendDueThisMonth()
 
     val categorySummaries = subscriptions
-        .groupBy { it.category.label }
-        .map { (label, items) -> label to items.sumOf { it.amount } }
-        .sortedByDescending { it.second }
-        .mapIndexed { index, (label, amount) ->
-            Triple(label, amount, CategoryPalette[index % CategoryPalette.size])
+        .spendByCategory()
+        .mapIndexed { index, categorySpend ->
+            Triple(
+                categorySpend.category.label,
+                categorySpend.monthlyAmount,
+                CategoryPalette[index % CategoryPalette.size]
+            )
         }
 
     Scaffold(
@@ -98,7 +106,9 @@ fun InsightsScreen(
         ) {
             Text(
                 text = "Insights",
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { heading() },
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onBackground
@@ -106,7 +116,7 @@ fun InsightsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (subscriptions.isEmpty()) {
+            if (categorySummaries.isEmpty()) {
                 EmptyInsightsMessage()
             } else {
                 LazyColumn(
@@ -115,7 +125,7 @@ fun InsightsScreen(
                 ) {
                     item {
                         MonthlySpendingCard(
-                            totalSpend = totalMonthlySpend
+                            totalSpend = spendThisMonth
                         )
                     }
 
@@ -141,16 +151,21 @@ private fun MonthlySpendingCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "THIS MONTH SPENDING",
+                text = "ESTIMATED BILLS THIS MONTH",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "₱${String.format(Locale.US, "%,.2f", totalSpend)}",
+                text = formatSubscriptionAmount(totalSpend),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Based on billing dates. Payments aren't tracked.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Box(
                 modifier = Modifier
@@ -181,6 +196,7 @@ private fun SpendingByCategoryCard(
         ) {
             Text(
                 text = "Spending by Category",
+                modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -318,12 +334,15 @@ private fun CategoryProgressRow(
             ) {
                 Text(
                     text = categoryName,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "₱${String.format(Locale.US, "%,.2f", totalAmount)}",
+                    text = formatSubscriptionAmount(totalAmount),
                     style = MaterialTheme.typography.bodyMedium,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -352,7 +371,7 @@ private fun EmptyInsightsMessage() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "No subscription data available.",
+            text = "No active subscriptions to analyze yet.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

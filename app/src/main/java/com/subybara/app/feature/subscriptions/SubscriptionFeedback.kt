@@ -23,6 +23,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
@@ -35,6 +36,8 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -69,6 +72,8 @@ private val SmallButtonShape = RoundedCornerShape(12.dp)
 /**
  * Displays success messages above the screen content.
  * Place it below the status bar, as in SubybaraNavHost.
+ *
+ * When the message has an action label, such as "Undo", it is shown as a button.
  */
 @Composable
 fun SubscriptionSnackbarHost(
@@ -79,6 +84,8 @@ fun SubscriptionSnackbarHost(
         hostState = hostState,
         modifier = modifier
     ) { snackbarData ->
+        val actionLabel = snackbarData.visuals.actionLabel
+
         Surface(
             modifier = Modifier.padding(12.dp),
             shape = RoundedCornerShape(percent = 50),
@@ -89,7 +96,7 @@ fun SubscriptionSnackbarHost(
                 modifier = Modifier.padding(
                     start = 24.dp,
                     top = 6.dp,
-                    end = 36.dp,
+                    end = if (actionLabel == null) 36.dp else 12.dp,
                     bottom = 6.dp
                 ),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -105,6 +112,19 @@ fun SubscriptionSnackbarHost(
                     text = snackbarData.visuals.message,
                     style = MaterialTheme.typography.labelLarge
                 )
+
+                if (actionLabel != null) {
+                    TextButton(
+                        onClick = { snackbarData.performAction() },
+                        colors = ButtonDefaults.textButtonColors(contentColor = White)
+                    ) {
+                        Text(
+                            text = actionLabel,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
     }
@@ -338,6 +358,7 @@ private fun DialogFace() {
 private fun DialogTitle(text: String) {
     Text(
         text = text,
+        modifier = Modifier.semantics { heading() },
         style = MaterialTheme.typography.titleLarge,
         color = Neutral800,
         textAlign = TextAlign.Center

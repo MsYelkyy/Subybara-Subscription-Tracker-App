@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -35,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -53,8 +56,9 @@ import com.subybara.app.core.designsystem.theme.White
 import com.subybara.app.core.model.Subscription
 import com.subybara.app.core.model.SubscriptionStatus
 import com.subybara.app.core.model.daysUntil
+import com.subybara.app.core.model.formatDate
 import com.subybara.app.core.model.formatSubscriptionAmount
-import com.subybara.app.core.model.parseDate
+import com.subybara.app.core.model.nextBillingDate
 import com.subybara.app.core.model.reformatDate
 
 private val SubscriptionDetailsDivider = Color(0xFFF1EDDC)
@@ -84,9 +88,8 @@ fun SubscriptionDetailsScreen(
 ) {
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
-    val daysRemaining = parseDate(subscription.renewalDate)?.let { renewalDate ->
-        daysUntil(renewalDate)
-    }
+    val billingDate = subscription.nextBillingDate()
+    val daysRemaining = billingDate?.let { date -> daysUntil(date) }
 
     Scaffold(modifier = modifier) { innerPadding ->
         Column(
@@ -137,6 +140,7 @@ fun SubscriptionDetailsScreen(
 
                 Text(
                     text = subscription.name,
+                    modifier = Modifier.semantics { heading() },
                     style = MaterialTheme.typography.titleMedium.copy(
                         lineHeight = 24.sp
                     ),
@@ -160,6 +164,7 @@ fun SubscriptionDetailsScreen(
 
                 BillingSummaryCard(
                     subscription = subscription,
+                    billingDate = billingDate,
                     daysRemaining = daysRemaining
                 )
 
@@ -169,10 +174,10 @@ fun SubscriptionDetailsScreen(
                     details = listOf(
                         "Billing Cycle" to subscription.billingCycle,
                         "Category" to subscription.category.label,
-                        "Renewal Date" to reformatDate(
-                            subscription.renewalDate,
-                            "d MMM yyyy"
-                        ).uppercase(),
+                        "Renewal Date" to (
+                            billingDate?.let { date -> formatDate(date, "d MMM yyyy") }
+                                ?: subscription.renewalDate
+                            ).uppercase(),
                         "Days Remaining" to daysLabel(daysRemaining),
                         "Payment Method" to subscription.paymentMethod.ifBlank { "—" },
                         "Start Date" to reformatDate(
@@ -345,6 +350,7 @@ private fun SubscriptionStatusLabel(status: SubscriptionStatus) {
 @Composable
 private fun BillingSummaryCard(
     subscription: Subscription,
+    billingDate: Long?,
     daysRemaining: Int?
 ) {
     val remaining = if (daysRemaining != null && daysRemaining > 0) {
@@ -362,13 +368,23 @@ private fun BillingSummaryCard(
                 Text(
                     text = formatSubscriptionAmount(subscription.amount),
                     style = MaterialTheme.typography.titleLarge,
-                    color = Primary900
+                    color = Primary900,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 8.sp,
+                        maxFontSize = MaterialTheme.typography.titleLarge.fontSize
+                    )
                 )
 
                 Text(
                     text = subscription.billingCycle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Neutral500
+                    color = Neutral500,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 8.sp,
+                        maxFontSize = MaterialTheme.typography.bodySmall.fontSize
+                    )
                 )
             }
 
@@ -385,7 +401,8 @@ private fun BillingSummaryCard(
                 )
 
                 Text(
-                    text = reformatDate(subscription.renewalDate, "MMMM d, yyyy"),
+                    text = billingDate?.let { date -> formatDate(date, "MMMM d, yyyy") }
+                        ?: subscription.renewalDate,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Medium,
                         lineHeight = 21.sp

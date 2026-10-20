@@ -33,6 +33,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -81,6 +85,7 @@ fun SignInScreen(
             ) {
                 Text(
                     text = "Welcome back!",
+                    modifier = Modifier.semantics { heading() },
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontSize = 26.sp,
                         lineHeight = 32.sp,
@@ -149,7 +154,7 @@ fun SignInScreen(
 
                 SubybaraPrimaryButton(
                     text = "Log In",
-                    modifier = Modifier.height(44.dp),
+                    modifier = Modifier.heightIn(min = 44.dp),
                     shape = RoundedCornerShape(20.dp),
                     onClick = {
                         val inputEmail = email.trim()
@@ -207,7 +212,8 @@ private fun SignInErrorBanner(
             .fillMaxWidth()
             .background(color = SignInErrorBackground, shape = RoundedCornerShape(12.dp))
             .border(1.dp, SignInErrorBorder, RoundedCornerShape(12.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
         verticalAlignment = Alignment.Top
     ) {
         Icon(
