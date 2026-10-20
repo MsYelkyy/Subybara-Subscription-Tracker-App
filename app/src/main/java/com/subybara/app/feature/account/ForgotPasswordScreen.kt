@@ -80,7 +80,7 @@ fun ForgotPasswordScreen(
 
             if (isSubmitted) {
                 Text(
-                    text = "Recovery instructions sent to $email!",
+                    text = "This is a prototype feature. In a production system, recovery instructions would be sent to $email.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Primary600,
                     textAlign = TextAlign.Center,
