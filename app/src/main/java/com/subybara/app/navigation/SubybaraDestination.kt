@@ -19,6 +19,18 @@ sealed interface SubybaraDestination {
         override val route: String = "subscriptions"
     }
 
+    data object SubscriptionDetails : SubybaraDestination {
+        override val route: String = "subscription_details"
+    }
+
+    data object AddSubscription : SubybaraDestination {
+        override val route: String = "add_subscription"
+    }
+
+    data object EditSubscription : SubybaraDestination {
+        override val route: String = "edit_subscription"
+    }
+
     data object Renewals : SubybaraDestination {
         override val route: String = "renewals"
     }
@@ -31,15 +43,33 @@ sealed interface SubybaraDestination {
         override val route: String = "profile"
     }
 
+    data object SignUp : SubybaraDestination {
+        override val route: String = "sign_up"
+    }
+
+    data object ForgotPassword : SubybaraDestination {
+        override val route: String = "forgot_password"
+    }
+
+    data object Notifications : SubybaraDestination {
+        override val route: String = "notifications"
+    }
+
     companion object {
         private val allDestinations = listOf(
             Welcome,
             SignIn,
             Home,
             Subscriptions,
+            SubscriptionDetails,
+            AddSubscription,
+            EditSubscription,
             Renewals,
             Insights,
-            Profile
+            Profile,
+            SignUp,
+            ForgotPassword,
+            Notifications
         )
 
         fun fromRoute(route: String): SubybaraDestination =

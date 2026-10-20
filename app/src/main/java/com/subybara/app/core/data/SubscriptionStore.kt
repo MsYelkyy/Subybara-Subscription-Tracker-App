@@ -2,7 +2,8 @@ package com.subybara.app.core.data
 
 import androidx.compose.runtime.mutableStateListOf
 import com.subybara.app.core.model.Subscription
-
+import com.subybara.app.core.model.SubscriptionCategory
+import com.subybara.app.core.model.SubscriptionStatus
 /**
  * Stores and manages temporary subscription data shared across the application.
  *
@@ -17,21 +18,34 @@ object SubscriptionStore {
             name = "Spotify Premium",
             amount = 149.00,
             billingCycle = "Monthly",
-            renewalDate = "October 29"
+            renewalDate = "October 29, 2026",
+            category = SubscriptionCategory.MUSIC,
+            status = SubscriptionStatus.ACTIVE,
+            paymentMethod = "Credit Card",
+            startDate = "March 29, 2024"
         ),
         Subscription(
             id = 2,
             name = "Netflix",
             amount = 549.00,
             billingCycle = "Monthly",
-            renewalDate = "November 1"
+            renewalDate = "November 1, 2026",
+            category = SubscriptionCategory.ENTERTAINMENT,
+            status = SubscriptionStatus.ACTIVE,
+            paymentMethod = "GCash",
+            startDate = "January 24, 2023",
+            notes = "All apps plan"
         ),
         Subscription(
             id = 3,
             name = "YouTube Premium",
             amount = 159.00,
             billingCycle = "Monthly",
-            renewalDate = "November 8"
+            renewalDate = "November 8, 2026",
+            category = SubscriptionCategory.MUSIC,
+            status = SubscriptionStatus.ACTIVE,
+            paymentMethod = "Maya",
+            startDate = "August 8, 2025"
         )
     )
 
@@ -81,6 +95,12 @@ object SubscriptionStore {
         return true
     }
 
+    /** Updates tracking status only; it does not contact the provider. */
+    fun changeStatus(subscriptionId: Int, status: SubscriptionStatus): Boolean {
+        val subscription = findById(subscriptionId) ?: return false
+        return update(subscription.copy(status = status))
+    }
+
     /**
      * Removes a subscription using its unique ID.
      *
@@ -90,5 +110,21 @@ object SubscriptionStore {
         return _subscriptions.removeAll { subscription ->
             subscription.id == subscriptionId
         }
+    }
+
+    /**
+     * Puts back a subscription that was just removed, at its previous position.
+     *
+     * Does nothing if a subscription with the same ID is already in the list.
+     */
+    fun restore(subscription: Subscription, position: Int) {
+        if (findById(subscription.id) != null) {
+            return
+        }
+
+        _subscriptions.add(
+            position.coerceIn(0, _subscriptions.size),
+            subscription
+        )
     }
 }

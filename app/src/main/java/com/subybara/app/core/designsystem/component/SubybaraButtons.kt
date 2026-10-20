@@ -3,6 +3,7 @@ package com.subybara.app.core.designsystem.component
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -12,23 +13,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.subybara.app.core.designsystem.theme.SubybaraGreen
+import com.subybara.app.core.designsystem.theme.Primary600
+import com.subybara.app.core.designsystem.theme.White
 
 /**
- * Displays the primary filled button used for important actions in Subybara.
+ * Main filled action button used for primary actions.
  *
- * @param text Text displayed inside the button.
- * @param onClick Called when the user taps the button.
- * @param modifier Modifier applied to the button.
- * @param enabled Whether the button can be interacted with.
- * @param shape Shape of the button container.
+ * [containerColor] is green by default; pass a different color for
+ * destructive actions such as deleting.
  */
 @Composable
 fun SubybaraPrimaryButton(
@@ -36,75 +33,61 @@ fun SubybaraPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(18.dp)
+    shape: Shape = RoundedCornerShape(15.dp),
+    containerColor: Color = Primary600
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         enabled = enabled,
         shape = shape,
         colors = ButtonDefaults.buttonColors(
-            containerColor = SubybaraGreen,
-            contentColor = Color.White
+            containerColor = containerColor,
+            contentColor = White,
+            disabledContainerColor = containerColor.copy(alpha = 0.4f),
+            disabledContentColor = White.copy(alpha = 0.7f)
         ),
-        elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = 0.dp
+        contentPadding = PaddingValues(
+            horizontal = 20.dp,
+            vertical = 14.dp
         )
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelLarge.copy(
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.sp
-            )
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
 
 /**
- * Displays a clickable text action for secondary or low-emphasis actions.
- *
- * The component provides button semantics and a configurable touch target
- * without displaying a filled button container.
- *
- * @param text Text displayed for the action.
- * @param onClick Called when the user taps the action.
- * @param modifier Modifier applied to the clickable container.
- * @param color Color of the displayed text.
- * @param shape Shape used for clipping the clickable area.
- * @param contentPadding Padding around the text and within the touch target.
+ * Lightweight text action used for secondary actions such as
+ * Sign In, Sign Up, or Forgot Password.
  */
 @Composable
 fun SubybaraTextAction(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    color: Color = SubybaraGreen,
-    shape: Shape = RoundedCornerShape(18.dp),
-    contentPadding: PaddingValues = PaddingValues(
-        horizontal = 16.dp,
-        vertical = 10.dp
-    )
+    color: Color = Primary600
 ) {
     Box(
         modifier = modifier
-            .clip(shape)
             .clickable(
                 role = Role.Button,
                 onClick = onClick
             )
-            .padding(contentPadding),
+            .padding(
+                horizontal = 8.dp,
+                vertical = 4.dp
+            ),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = color,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.sp
-            )
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
