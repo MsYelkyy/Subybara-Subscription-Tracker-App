@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.subybara.app.core.data.AccountStore
 import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
 import com.subybara.app.core.designsystem.component.SubybaraTextAction
 import com.subybara.app.core.designsystem.theme.Neutral500
@@ -124,15 +125,25 @@ fun SignInScreen(
                 onClick = {
                     val inputEmail = email.trim()
 
-                    if (inputEmail.isEmpty() || password.isEmpty()) {
-                        errorMessage = "Please enter both email and password."
-                        Toast.makeText(context, "Please enter both email and password.", Toast.LENGTH_SHORT).show()
-                    } else if (!AccountValidator.isValidEmail(inputEmail)) {
-                        errorMessage = "Please enter a valid email address (e.g. name@domain.com)."
-                        Toast.makeText(context, "Invalid email format!", Toast.LENGTH_SHORT).show()
-                    } else {
-                        errorMessage = null
-                        onSignInSuccess()
+                    when {
+                        inputEmail.isEmpty() || password.isEmpty() -> {
+                            errorMessage = "Please enter both email and password."
+                            Toast.makeText(context, "Please enter both email and password.", Toast.LENGTH_SHORT).show()
+                        }
+                        !AccountValidator.isValidEmail(inputEmail) -> {
+                            errorMessage = "Please enter a valid email address (e.g. name@domain.com)."
+                            Toast.makeText(context, "Invalid email format!", Toast.LENGTH_SHORT).show()
+                        }
+                        else -> {
+                            errorMessage = null
+                            if (AccountStore.currentUser.email != inputEmail) {
+                                AccountStore.updateUser(
+                                    name = AccountStore.currentUser.name,
+                                    email = inputEmail,
+                                )
+                            }
+                            onSignInSuccess()
+                        }
                     }
                 }
             )
