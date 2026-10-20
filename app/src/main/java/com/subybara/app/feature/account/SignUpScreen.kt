@@ -4,14 +4,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -62,119 +66,126 @@ fun SignUpScreen(
     Scaffold(
         modifier = modifier
     ) { innerPadding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .background(color = MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "Create Account",
-                style = MaterialTheme.typography.titleLarge,
-                color = Neutral800,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Sign up to start tracking your subscriptions",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Neutral500,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Name Field
-            AccountTextField(
-                value = name,
-                onValueChange = {
-                    name = it
-                    if (errorMessage != null) errorMessage = null
-                },
-                placeholder = "Full name",
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Email Field
-            AccountTextField(
-                value = email,
-                onValueChange = {
-                    email = it
-                    if (errorMessage != null) errorMessage = null
-                },
-                placeholder = "Email address",
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Password Field
-            AccountTextField(
-                value = password,
-                onValueChange = {
-                    password = it
-                    if (errorMessage != null) errorMessage = null
-                },
-                placeholder = "Password",
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation()
-            )
-
-            if (errorMessage != null) {
-                Spacer(modifier = Modifier.height(8.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(min = maxHeight)
+                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
-                    text = errorMessage!!,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.fillMaxWidth()
+                    text = "Create Account",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Neutral800,
+                    textAlign = TextAlign.Center
                 )
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            SubybaraPrimaryButton(
-                text = "Sign Up",
-                onClick = {
-                    val trimmedName = name.trim()
-                    val trimmedEmail = email.trim()
+                Text(
+                    text = "Sign up to start tracking your subscriptions",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Neutral500,
+                    textAlign = TextAlign.Center
+                )
 
-                    when {
-                        trimmedName.isBlank() || trimmedEmail.isBlank() || password.isBlank() -> {
-                            errorMessage = "Please fill in all required fields."
-                        }
-                        !AccountValidator.isValidName(trimmedName) -> {
-                            errorMessage = "Name must contain letters and cannot consist only of numbers or special symbols."
-                        }
-                        !AccountValidator.isValidEmail(trimmedEmail) -> {
-                            errorMessage = "Please enter a valid email address."
-                        }
-                        password.length < 6 -> {
-                            errorMessage = "Password must be at least 6 characters."
-                        }
-                        else -> {
-                            errorMessage = null
-                            AccountStore.updateUser(trimmedName, trimmedEmail)
-                            showSuccessDialog = true
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Name Field
+                AccountTextField(
+                    value = name,
+                    onValueChange = {
+                        name = it
+                        if (errorMessage != null) errorMessage = null
+                    },
+                    placeholder = "Full name",
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Email Field
+                AccountTextField(
+                    value = email,
+                    onValueChange = {
+                        email = it
+                        if (errorMessage != null) errorMessage = null
+                    },
+                    placeholder = "Email address",
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Password Field
+                AccountTextField(
+                    value = password,
+                    onValueChange = {
+                        password = it
+                        if (errorMessage != null) errorMessage = null
+                    },
+                    placeholder = "Password",
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+
+                if (errorMessage != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = errorMessage!!,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                SubybaraPrimaryButton(
+                    text = "Sign Up",
+                    onClick = {
+                        val trimmedName = name.trim()
+                        val trimmedEmail = email.trim()
+
+                        when {
+                            trimmedName.isBlank() || trimmedEmail.isBlank() || password.isBlank() -> {
+                                errorMessage = "Please fill in all required fields."
+                            }
+                            !AccountValidator.isValidName(trimmedName) -> {
+                                errorMessage = "Name must contain letters and cannot consist only of numbers or special symbols."
+                            }
+                            !AccountValidator.isValidEmail(trimmedEmail) -> {
+                                errorMessage = "Please enter a valid email address."
+                            }
+                            password.length < 6 -> {
+                                errorMessage = "Password must be at least 6 characters."
+                            }
+                            else -> {
+                                errorMessage = null
+                                AccountStore.updateUser(trimmedName, trimmedEmail)
+                                showSuccessDialog = true
+                            }
                         }
                     }
-                }
-            )
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            SubybaraTextAction(
-                text = "Already have an account? Sign In",
-                onClick = onSignInClick,
-                color = Primary600
-            )
+                SubybaraTextAction(
+                    text = "Already have an account? Sign In",
+                    onClick = onSignInClick,
+                    color = Primary600
+                )
+            }
         }
     }
 

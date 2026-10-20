@@ -3,7 +3,7 @@ package com.subybara.app.feature.subscriptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,7 +29,7 @@ fun EditSubscriptionScreen(
     onSaveClick: (Subscription) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var changesToSave by remember { mutableStateOf<Subscription?>(null) }
+    var changesToSave by rememberSaveable { mutableStateOf<Subscription?>(null) }
 
     SubscriptionForm(
         title = "Edit Subscription",

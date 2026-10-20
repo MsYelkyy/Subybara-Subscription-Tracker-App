@@ -35,6 +35,7 @@ import com.subybara.app.feature.subscriptions.SubscriptionsScreen
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun SubybaraNavHost() {
@@ -78,7 +79,7 @@ fun SubybaraNavHost() {
     val showFeedback: (String) -> Unit = { message ->
         feedbackJob?.cancel()
         feedbackJob = coroutineScope.launch {
-            withTimeoutOrNull(2_000L) {
+            withTimeoutOrNull(2.seconds) {
                 snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Indefinite)
             }
         }
@@ -99,7 +100,12 @@ fun SubybaraNavHost() {
 
     // Let forms handle Back first if there are unsaved changes.
     BackHandler(
-        enabled = destination == SubybaraDestination.SubscriptionDetails ||
+        enabled = destination == SubybaraDestination.SignIn ||
+            destination == SubybaraDestination.SignUp ||
+            destination == SubybaraDestination.Subscriptions ||
+            destination == SubybaraDestination.Insights ||
+            destination == SubybaraDestination.Profile ||
+            destination == SubybaraDestination.SubscriptionDetails ||
             destination == SubybaraDestination.AddSubscription ||
             destination == SubybaraDestination.EditSubscription ||
             destination == SubybaraDestination.Renewals ||
@@ -107,6 +113,8 @@ fun SubybaraNavHost() {
     ) {
         navigator.navigateTo(
             when (destination) {
+                SubybaraDestination.SignIn -> SubybaraDestination.Welcome
+                SubybaraDestination.SignUp -> SubybaraDestination.SignIn
                 SubybaraDestination.EditSubscription -> SubybaraDestination.SubscriptionDetails
                 SubybaraDestination.SubscriptionDetails ->
                     SubybaraDestination.fromRoute(subscriptionDetailsOrigin)
@@ -114,6 +122,9 @@ fun SubybaraNavHost() {
                 SubybaraDestination.AddSubscription ->
                     SubybaraDestination.fromRoute(addSubscriptionOrigin)
 
+                SubybaraDestination.Subscriptions,
+                SubybaraDestination.Insights,
+                SubybaraDestination.Profile,
                 SubybaraDestination.Renewals,
                 SubybaraDestination.Notifications -> SubybaraDestination.Home
 
@@ -132,8 +143,7 @@ fun SubybaraNavHost() {
             SubybaraDestination.SignIn -> SignInScreen(
                 onSignInSuccess = { navigator.navigateTo(SubybaraDestination.Home) },
                 onForgotPasswordClick = { navigator.navigateTo(SubybaraDestination.ForgotPassword) },
-                onSignUpClick = { navigator.navigateTo(SubybaraDestination.SignUp) },
-                onBackClick = { navigator.navigateTo(SubybaraDestination.Welcome) }
+                onSignUpClick = { navigator.navigateTo(SubybaraDestination.SignUp) }
             )
 
             SubybaraDestination.SignUp -> SignUpScreen(
@@ -223,11 +233,6 @@ fun SubybaraNavHost() {
                 subscriptions = SubscriptionStore.subscriptions,
                 onDestinationClick = onMainDestinationClick,
                 onAddSubscriptionClick = onAddSubscriptionClick
-            )
-
-            else -> WelcomeScreen(
-                onGetStartedClick = { navigator.navigateTo(SubybaraDestination.Home) },
-                onSignInClick = { navigator.navigateTo(SubybaraDestination.SignIn) }
             )
         }
 

@@ -33,10 +33,10 @@ class AccountNavigationAndRotationTest {
         }
 
         // Navigate from Welcome screen to Sign In
-        composeTestRule.onNodeWithText("Sign In").performClick()
+        composeTestRule.onNodeWithText("I already have an account").performClick()
 
         // Navigate from Sign In to Sign Up
-        composeTestRule.onNodeWithText("Don't have an account? Sign Up").performClick()
+        composeTestRule.onNodeWithText("Don't have an account? Sign up").performClick()
 
         // Fill out Sign Up form
         composeTestRule.onNodeWithText("Full name").performTextInput("Mary-Jane O'Connor")
