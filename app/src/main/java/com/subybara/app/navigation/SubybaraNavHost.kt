@@ -22,7 +22,9 @@ import com.subybara.app.feature.account.SignInScreen
 import com.subybara.app.feature.account.SignUpScreen
 import com.subybara.app.feature.account.WelcomeScreen
 import com.subybara.app.feature.home.HomeScreen
+import com.subybara.app.feature.insights.InsightsScreen
 import com.subybara.app.feature.profile.ProfileScreen
+import com.subybara.app.feature.renewals.UpcomingRenewalsScreen
 import com.subybara.app.feature.subscriptions.AddSubscriptionScreen
 import com.subybara.app.feature.subscriptions.EditSubscriptionScreen
 import com.subybara.app.feature.subscriptions.SubscriptionDetailsScreen
@@ -47,6 +49,7 @@ fun SubybaraNavHost() {
     val onMainDestinationClick: (SubybaraDestination) -> Unit = { destination ->
         if (destination == SubybaraDestination.Home ||
             destination == SubybaraDestination.Subscriptions ||
+            destination == SubybaraDestination.Insights ||
             destination == SubybaraDestination.Profile
         ) {
             navigator.navigateTo(destination)
@@ -124,8 +127,12 @@ fun SubybaraNavHost() {
             )
 
             SubybaraDestination.Home -> HomeScreen(
+                subscriptions = SubscriptionStore.subscriptions,
                 onDestinationClick = onMainDestinationClick,
-                onAddSubscriptionClick = onAddSubscriptionClick
+                onAddSubscriptionClick = onAddSubscriptionClick,
+                onViewAllRenewalsClick = { navigator.navigateTo(SubybaraDestination.Renewals) },
+                onSelectSubscription = { // Navigate to detail screen when ready
+                }
             )
 
             SubybaraDestination.Subscriptions -> SubscriptionsScreen(
@@ -182,6 +189,17 @@ fun SubybaraNavHost() {
                 onDestinationClick = onMainDestinationClick,
                 onAddSubscriptionClick = onAddSubscriptionClick,
                 onSignOutClick = { navigator.navigateTo(SubybaraDestination.Welcome) }
+            )
+
+            SubybaraDestination.Renewals -> UpcomingRenewalsScreen(
+                subscriptions = SubscriptionStore.subscriptions,
+                onNavigateBack = { navigator.navigateTo(SubybaraDestination.Home) }
+            )
+
+            SubybaraDestination.Insights -> InsightsScreen(
+                subscriptions = SubscriptionStore.subscriptions,
+                onDestinationClick = onMainDestinationClick,
+                onAddSubscriptionClick = onAddSubscriptionClick
             )
 
             else -> WelcomeScreen(
