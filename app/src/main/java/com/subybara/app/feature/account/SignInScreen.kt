@@ -35,6 +35,7 @@ import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.Secondary200
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.util.AccountValidator
 
 @Composable
 fun SignInScreen(
@@ -122,12 +123,11 @@ fun SignInScreen(
                 text = "Sign In",
                 onClick = {
                     val inputEmail = email.trim()
-                    val isEmailValid = inputEmail.contains("@") && inputEmail.contains(".") && inputEmail.length > 5
 
                     if (inputEmail.isEmpty() || password.isEmpty()) {
                         errorMessage = "Please enter both email and password."
                         Toast.makeText(context, "Please enter both email and password.", Toast.LENGTH_SHORT).show()
-                    } else if (!isEmailValid) {
+                    } else if (!AccountValidator.isValidEmail(inputEmail)) {
                         errorMessage = "Please enter a valid email address (e.g. name@domain.com)."
                         Toast.makeText(context, "Invalid email format!", Toast.LENGTH_SHORT).show()
                     } else {

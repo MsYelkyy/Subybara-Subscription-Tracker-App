@@ -37,6 +37,7 @@ import com.subybara.app.core.designsystem.theme.OffWhite
 import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.Secondary200
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.util.AccountValidator
 
 /**
  * Sign Up screen allowing new users to register an account.
@@ -143,16 +144,15 @@ fun SignUpScreen(
                 onClick = {
                     val trimmedName = name.trim()
                     val trimmedEmail = email.trim()
-                    val emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$".toRegex()
 
                     when {
                         trimmedName.isBlank() || trimmedEmail.isBlank() || password.isBlank() -> {
                             errorMessage = "Please fill in all required fields."
                         }
-                        !trimmedName.all { it.isLetter() || it.isWhitespace() || it == '\'' || it == '-' } -> {
-                            errorMessage = "Name cannot contain numbers or special symbols."
+                        !AccountValidator.isValidName(trimmedName) -> {
+                            errorMessage = "Name must contain letters and cannot consist only of numbers or special symbols."
                         }
-                        !trimmedEmail.matches(emailRegex) -> {
+                        !AccountValidator.isValidEmail(trimmedEmail) -> {
                             errorMessage = "Please enter a valid email address."
                         }
                         password.length < 6 -> {

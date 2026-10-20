@@ -31,6 +31,7 @@ import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.Secondary200
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.util.AccountValidator
 
 /**
  * Forgot Password screen allowing users to request password recovery instructions.
@@ -145,7 +146,7 @@ fun ForgotPasswordScreen(
                 SubybaraPrimaryButton(
                     text = "Send Instructions",
                     onClick = {
-                        if (email.isBlank() || !email.contains("@")) {
+                        if (!AccountValidator.isValidEmail(email)) {
                             errorMessage = "Please enter a valid email address."
                         } else {
                             isSubmitted = true
