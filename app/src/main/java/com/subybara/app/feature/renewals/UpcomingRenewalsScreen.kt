@@ -1,9 +1,9 @@
 package com.subybara.app.feature.renewals
 
-import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -26,7 +27,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,27 +35,33 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subybara.app.R
 import com.subybara.app.core.data.SubscriptionStore
+import com.subybara.app.core.designsystem.component.SubybaraSearchField
+import com.subybara.app.core.designsystem.theme.Neutral500
+import com.subybara.app.core.designsystem.theme.Neutral800
+import com.subybara.app.core.designsystem.theme.Primary600
+import com.subybara.app.core.designsystem.theme.Primary900
+import com.subybara.app.core.designsystem.theme.Secondary200
+import com.subybara.app.core.designsystem.theme.Secondary300
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.designsystem.theme.White
 import com.subybara.app.core.model.Subscription
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.TimeUnit
+import com.subybara.app.core.model.daysUntil
+import com.subybara.app.core.model.formatSubscriptionAmount
+import com.subybara.app.core.model.parseDate
+import com.subybara.app.core.model.reformatDate
+import com.subybara.app.feature.subscriptions.SubscriptionLogo
 
 /**
- * Screen displaying borderless list of upcoming renewals with filter controls.
+ * Screen displaying borderless list of upcoming renewals with search and filter controls.
  *
  * @param subscriptions Active list of subscriptions, defaults to [SubscriptionStore.subscriptions].
  * @param modifier Applied to root layout.
@@ -69,9 +75,13 @@ fun UpcomingRenewalsScreen(
     onNavigateBack: () -> Unit = {},
     onSelectSubscription: (Subscription) -> Unit = {}
 ) {
+    var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedFilter by rememberSaveable { mutableStateOf(RenewalFilter.Next30Days) }
 
-    val sortedSubscriptions = subscriptions.sortedBy { it.renewalDate }
+    val visibleRenewals = subscriptions
+        .filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }
+        .filter { selectedFilter.includes(it.renewalDate) }
+        .sortedBy { parseDate(it.renewalDate) }
 
     Scaffold(
         modifier = modifier,
@@ -84,6 +94,12 @@ fun UpcomingRenewalsScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 20.dp)
         ) {
+            SubybaraSearchField(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                placeholder = "Search Renewals"
+            )
+
             RenewalFilterChips(
                 selectedFilter = selectedFilter,
                 onFilterSelected = { selectedFilter = it }
@@ -93,15 +109,15 @@ fun UpcomingRenewalsScreen(
                 text = "This Month",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = Neutral800,
                 modifier = Modifier.padding(top = 12.dp, bottom = 12.dp)
             )
 
-            if (sortedSubscriptions.isEmpty()) {
+            if (visibleRenewals.isEmpty()) {
                 EmptyRenewalsMessage()
             } else {
                 RenewalList(
-                    subscriptions = sortedSubscriptions,
+                    subscriptions = visibleRenewals,
                     onSelectSubscription = onSelectSubscription
                 )
             }
@@ -112,15 +128,12 @@ fun UpcomingRenewalsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RenewalsTopBar(onNavigateBack: () -> Unit) {
-    TopAppBar(
+    CenterAlignedTopAppBar(
         title = {
             Text(
                 text = "Renewals",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
+                color = Neutral800
             )
         },
         navigationIcon = {
@@ -128,16 +141,7 @@ private fun RenewalsTopBar(onNavigateBack: () -> Unit) {
                 Icon(
                     painter = painterResource(R.drawable.ic_arrow_long_left),
                     contentDescription = "Return to Dashboard",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        },
-        actions = {
-            IconButton(onClick = {}) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_search),
-                    contentDescription = "Search Renewals",
-                    tint = MaterialTheme.colorScheme.onBackground
+                    tint = Neutral800
                 )
             }
         },
@@ -154,27 +158,23 @@ private fun RenewalFilterChips(
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 8.dp)
+        modifier = Modifier
+            .padding(vertical = 12.dp)
+            .horizontalScroll(rememberScrollState())
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            RenewalFilter.entries.forEach { filter ->
-                val isSelected = filter == selectedFilter
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onFilterSelected(filter) },
-                    label = { Text(text = filter.label) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                )
-            }
+        RenewalFilter.entries.forEach { filter ->
+            FilterChip(
+                selected = filter == selectedFilter,
+                onClick = { onFilterSelected(filter) },
+                label = { Text(text = filter.label) },
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = Secondary200,
+                    labelColor = Neutral800,
+                    selectedContainerColor = Primary600,
+                    selectedLabelColor = White
+                ),
+                border = BorderStroke(0.3.dp, Secondary300)
+            )
         }
     }
 }
@@ -206,8 +206,9 @@ private fun RenewalItemRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val (dayText, monthText) = parseDateBadges(subscription.renewalDate)
-    val daysRemaining = calculateDaysRemaining(subscription.renewalDate)
+    val dayText = reformatDate(subscription.renewalDate, "d")
+    val monthText = reformatDate(subscription.renewalDate, "MMM").uppercase()
+    val daysRemaining = parseDate(subscription.renewalDate)?.let { daysUntil(it) } ?: 0
 
     Row(
         modifier = modifier
@@ -225,12 +226,12 @@ private fun RenewalItemRow(
                 text = dayText,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = Neutral800
             )
             Text(
                 text = monthText,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Neutral500,
                 fontSize = 11.sp
             )
         }
@@ -238,7 +239,10 @@ private fun RenewalItemRow(
         Spacer(modifier = Modifier.width(12.dp))
 
         // Subscription app Logo
-        SubscriptionLogo(name = subscription.name)
+        SubscriptionLogo(
+            name = subscription.name,
+            logoUri = subscription.logoUri
+        )
 
         Spacer(modifier = Modifier.width(12.dp))
 
@@ -246,31 +250,29 @@ private fun RenewalItemRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = subscription.name,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelLarge,
+                color = Neutral800,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = subscription.category.label,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Neutral500
             )
         }
 
         // Price + Days Remaining
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "₱${String.format(Locale.US, "%,.2f", subscription.amount)}",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                text = formatSubscriptionAmount(subscription.amount),
+                style = MaterialTheme.typography.labelMedium,
+                color = Primary900
             )
             Text(
-                text = "in $daysRemaining days",
+                text = renewsInText(daysRemaining),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Neutral500
             )
         }
 
@@ -279,41 +281,9 @@ private fun RenewalItemRow(
         Icon(
             painter = painterResource(R.drawable.ic_chevron_right),
             contentDescription = "View Details",
-            modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
+            modifier = Modifier.size(20.dp),
+            tint = Color.Unspecified
         )
-    }
-}
-
-@Composable
-private fun SubscriptionLogo(
-    name: String,
-    modifier: Modifier = Modifier
-) {
-    val logoModifier = modifier
-        .size(40.dp)
-        .clip(RoundedCornerShape(10.dp))
-
-    val logoRes = logoFor(name)
-
-    if (logoRes != null) {
-        Image(
-            painter = painterResource(id = logoRes),
-            contentDescription = "$name logo",
-            modifier = logoModifier,
-            contentScale = ContentScale.Fit
-        )
-    } else {
-        Box(
-            modifier = logoModifier.background(MaterialTheme.colorScheme.secondaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = name.take(1).uppercase(),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
     }
 }
 
@@ -326,52 +296,26 @@ private fun EmptyRenewalsMessage() {
         Text(
             text = "No upcoming renewals found.",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = Neutral500
         )
     }
 }
 
-private fun parseDateBadges(rawDate: String): Pair<String, String> {
-    return runCatching {
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-        val date = sdf.parse(rawDate) ?: Date()
-        val cal = Calendar.getInstance().apply { time = date }
+private fun renewsInText(days: Int): String = when (days) {
+    0 -> "Today"
+    1 -> "in 1 day"
+    else -> "in $days days"
+}
 
-        val day = cal.get(Calendar.DAY_OF_MONTH).toString()
-        val monthSdf = SimpleDateFormat("MMM", Locale.US)
-        val month = monthSdf.format(date).uppercase()
-        Pair(day, month)
-    }.getOrElse {
-        val rawDay = rawDate
-            .split("-", "/", " ")
-            .lastOrNull { it.all { char -> char.isDigit() } && it.length <= 2 }
-            ?.toIntOrNull() ?: 1
-        Pair(rawDay.toString(), "JUL")
+private enum class RenewalFilter(val label: String, val maxDays: Int?) {
+    Next7Days("Next 7 Days", 7),
+    Next30Days("Next 30 Days", 30),
+    AllUpcoming("All Upcoming", null);
+
+    fun includes(renewalDate: String): Boolean {
+        val days = parseDate(renewalDate)?.let { daysUntil(it) } ?: return false
+        return days >= 0 && (maxDays == null || days <= maxDays)
     }
-}
-
-private fun calculateDaysRemaining(rawDate: String): Long {
-    return runCatching {
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-        val targetDate = sdf.parse(rawDate) ?: Date()
-        val diffMs = targetDate.time - System.currentTimeMillis()
-        val days = TimeUnit.MILLISECONDS.toDays(diffMs)
-        if (days < 0) 0L else days
-    }.getOrDefault(10L)
-}
-
-@DrawableRes
-private fun logoFor(name: String): Int? = when {
-    name.contains("netflix", ignoreCase = true) -> R.drawable.logo_netflix
-    name.contains("spotify", ignoreCase = true) -> R.drawable.logo_spotify
-    name.contains("youtube", ignoreCase = true) -> R.drawable.logo_youtube
-    else -> null
-}
-
-private enum class RenewalFilter(val label: String) {
-    Next7Days("Next 7 Days"),
-    Next30Days("Next 30 Days"),
-    AllUpcoming("All Upcoming")
 }
 
 @Preview(showBackground = true, showSystemUi = true)

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,21 +15,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,19 +37,22 @@ import androidx.compose.ui.unit.sp
 import com.subybara.app.core.data.SubscriptionStore
 import com.subybara.app.core.designsystem.component.SubybaraBottomBar
 import com.subybara.app.core.designsystem.component.SubybaraCard
+import com.subybara.app.core.designsystem.theme.CardBorder
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
 import com.subybara.app.core.model.Subscription
 import com.subybara.app.navigation.SubybaraDestination
 import java.util.Locale
 
 private val CategoryPalette = listOf(
-    Color(0xFF6B8E4E),
-    Color(0xFFE0A34A),
-    Color(0xFFC85A32),
-    Color(0xFF9D7BB0),
-    Color(0xFF7FA3C9),
+    Color(0xFF7E9B63),
+    Color(0xFFD7A44E),
+    Color(0xFFBF683A),
+    Color(0xFF9F7EC1),
+    Color(0xFF89AED0),
     Color(0xFF8DAA9D)
 )
+
+private val CategoryTrackColor = Color(0xFFF1EDDC)
 
 /**
  * Insights screen displaying subscription spending summaries and nested category breakdowns.
@@ -70,17 +69,15 @@ fun InsightsScreen(
     onDestinationClick: (SubybaraDestination) -> Unit = {},
     onAddSubscriptionClick: () -> Unit = {}
 ) {
-    var selectedTab by rememberSaveable { mutableStateOf(InsightsTab.Overview) }
-
     val totalMonthlySpend = subscriptions.sumOf { it.amount }
 
     val categorySummaries = subscriptions
         .groupBy { it.category.label }
-        .entries
-        .mapIndexed { index, (label, items) ->
-            Triple(label, items.sumOf { it.amount }, CategoryPalette[index % CategoryPalette.size])
-        }
+        .map { (label, items) -> label to items.sumOf { it.amount } }
         .sortedByDescending { it.second }
+        .mapIndexed { index, (label, amount) ->
+            Triple(label, amount, CategoryPalette[index % CategoryPalette.size])
+        }
 
     Scaffold(
         modifier = modifier,
@@ -109,11 +106,6 @@ fun InsightsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            InsightsTabRow(
-                selectedTab = selectedTab,
-                onTabSelect = { selectedTab = it }
-            )
-
             if (subscriptions.isEmpty()) {
                 EmptyInsightsMessage()
             } else {
@@ -135,31 +127,6 @@ fun InsightsScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun InsightsTabRow(
-    selectedTab: InsightsTab,
-    onTabSelect: (InsightsTab) -> Unit
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(bottom = 16.dp)
-    ) {
-        InsightsTab.entries.forEach { tab ->
-            FilterChip(
-                selected = tab == selectedTab,
-                onClick = { onTabSelect(tab) },
-                label = { Text(text = tab.label) },
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    labelColor = MaterialTheme.colorScheme.onSurface,
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
         }
     }
 }
@@ -231,17 +198,19 @@ private fun SpendingByCategoryCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider(color = CardBorder)
 
             // Category progress rows nested directly inside the card surface
-            categories.forEachIndexed { index, (categoryName, totalAmount, color) ->
-                CategoryProgressRow(
-                    categoryName = categoryName,
-                    totalAmount = totalAmount,
-                    color = color,
-                    totalSpend = totalSpend,
-                    showDivider = index < categories.lastIndex
-                )
+            Column {
+                categories.forEachIndexed { index, (categoryName, totalAmount, color) ->
+                    CategoryProgressRow(
+                        categoryName = categoryName,
+                        totalAmount = totalAmount,
+                        color = color,
+                        totalSpend = totalSpend,
+                        isLast = index == categories.lastIndex
+                    )
+                }
             }
         }
     }
@@ -255,9 +224,9 @@ private fun SegmentedCategoryBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(16.dp)
-            .clip(RoundedCornerShape(8.dp)),
-        horizontalArrangement = Arrangement.spacedBy(3.dp)
+            .height(20.dp)
+            .clip(RoundedCornerShape(10.dp)),
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         categories.forEach { (_, amount, color) ->
             val weight = if (totalSpend > 0) (amount / totalSpend).toFloat() else 1f
@@ -300,60 +269,77 @@ private fun CategoryProgressRow(
     totalAmount: Double,
     color: Color,
     totalSpend: Double,
-    showDivider: Boolean,
+    isLast: Boolean,
     modifier: Modifier = Modifier
 ) {
     val progress = if (totalSpend > 0) (totalAmount / totalSpend).toFloat() else 0f
 
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .width(16.dp)
+                .fillMaxHeight(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .size(9.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
+            if (!isLast) {
                 Box(
                     modifier = Modifier
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(color)
+                        .padding(top = 2.dp, bottom = 4.dp)
+                        .width(2.dp)
+                        .weight(1f)
+                        .background(CategoryTrackColor)
                 )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = if (isLast) 0.dp else 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = categoryName,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                Text(
+                    text = "₱${String.format(Locale.US, "%,.2f", totalAmount)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
-            Text(
-                text = "₱${String.format(Locale.US, "%,.2f", totalAmount)}",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
 
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp)),
-            color = color,
-            trackColor = MaterialTheme.colorScheme.secondary
-        )
-
-        if (showDivider) {
-            HorizontalDivider(
-                modifier = Modifier.padding(top = 8.dp),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                thickness = 0.5.dp
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp),
+                color = color,
+                trackColor = CategoryTrackColor,
+                gapSize = 0.dp,
+                drawStopIndicator = {}
             )
         }
     }
@@ -371,12 +357,6 @@ private fun EmptyInsightsMessage() {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
-}
-
-private enum class InsightsTab(val label: String) {
-    Overview("Overview"),
-    Spending("Spending"),
-    Categories("Categories")
 }
 
 @Preview(showBackground = true, showSystemUi = true)

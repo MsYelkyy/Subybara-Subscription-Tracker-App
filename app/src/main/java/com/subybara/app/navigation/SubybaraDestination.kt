@@ -51,6 +51,10 @@ sealed interface SubybaraDestination {
         override val route: String = "forgot_password"
     }
 
+    data object Notifications : SubybaraDestination {
+        override val route: String = "notifications"
+    }
+
     companion object {
         private val allDestinations = listOf(
             Welcome,
@@ -64,7 +68,8 @@ sealed interface SubybaraDestination {
             Insights,
             Profile,
             SignUp,
-            ForgotPassword
+            ForgotPassword,
+            Notifications
         )
 
         fun fromRoute(route: String): SubybaraDestination =
