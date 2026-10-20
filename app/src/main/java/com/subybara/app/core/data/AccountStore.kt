@@ -33,4 +33,14 @@ object AccountStore {
             email = email.trim(),
         )
     }
+
+    /**
+     * Resets the active user details to prototype defaults.
+     */
+    fun reset() {
+        currentUser = UserAccount(
+            name = "Harty User",
+            email = "harty@subybara.com",
+        )
+    }
 }
