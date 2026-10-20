@@ -32,7 +32,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -59,8 +58,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -72,6 +69,7 @@ import com.subybara.app.R
 import com.subybara.app.core.data.SubscriptionStore
 import com.subybara.app.core.designsystem.component.SubybaraBottomBar
 import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
+import com.subybara.app.core.designsystem.component.SubybaraSearchField
 import com.subybara.app.core.designsystem.theme.Neutral100
 import com.subybara.app.core.designsystem.theme.Neutral500
 import com.subybara.app.core.designsystem.theme.Neutral800
@@ -158,9 +156,10 @@ fun SubscriptionsScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                SubscriptionSearchField(
-                    searchQuery = searchQuery,
-                    onQueryChange = { searchQuery = it }
+                SubybaraSearchField(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    placeholder = "Search subscriptions"
                 )
 
                 SubscriptionFilterChips(
@@ -313,56 +312,6 @@ internal enum class SubscriptionFilter(
     Active("Active"),
     Paused("Paused"),
     Canceled("Canceled")
-}
-
-@Composable
-private fun SubscriptionSearchField(
-    searchQuery: String,
-    onQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    BasicTextField(
-        value = searchQuery,
-        onValueChange = onQueryChange,
-        singleLine = true,
-        textStyle = MaterialTheme.typography.bodyMedium.copy(
-            color = Neutral800
-        ),
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics { contentDescription = "Search subscriptions" }
-            .heightIn(min = 48.dp)
-            .background(
-                color = Secondary200,
-                shape = RoundedCornerShape(20.dp)
-            ),
-        decorationBox = { innerTextField ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_search),
-                    contentDescription = "Search",
-                    tint = Color.Unspecified
-                )
-                Spacer(Modifier.width(8.dp))
-
-                Box{
-                    if (searchQuery.isEmpty()) {
-                        Text(
-                            text = "Search subscriptions",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Neutral500
-                        )
-                    }
-                    innerTextField()
-                }
-            }
-        }
-    )
 }
 
 @Composable
