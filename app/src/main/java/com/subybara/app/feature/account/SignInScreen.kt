@@ -1,6 +1,5 @@
 package com.subybara.app.feature.account
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -11,13 +10,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,15 +32,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.subybara.app.R
 import com.subybara.app.core.data.AccountStore
 import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
 import com.subybara.app.core.designsystem.component.SubybaraTextAction
@@ -51,14 +54,11 @@ fun SignInScreen(
     onSignInSuccess: () -> Unit,
     onForgotPasswordClick: () -> Unit,
     onSignUpClick: () -> Unit,
-    onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
-
-    val context = LocalContext.current
 
     Scaffold(
         modifier = modifier
@@ -99,6 +99,11 @@ fun SignInScreen(
 
                 Spacer(modifier = Modifier.height(36.dp))
 
+                errorMessage?.let { message ->
+                    SignInErrorBanner(message = message)
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
+
                 // Email Field
                 AccountFieldLabel("Email")
                 Spacer(Modifier.height(8.dp))
@@ -109,6 +114,7 @@ fun SignInScreen(
                         errorMessage = null
                     },
                     placeholder = "you@example.com",
+                    isError = errorMessage != null,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                 )
@@ -125,21 +131,11 @@ fun SignInScreen(
                         errorMessage = null
                     },
                     placeholder = "••••••••",
+                    isError = errorMessage != null,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     visualTransformation = PasswordVisualTransformation()
                 )
-
-                if (errorMessage != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = errorMessage!!,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Start,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
 
                 Spacer(modifier = Modifier.height(12.dp))
                 SubybaraTextAction(
@@ -161,11 +157,9 @@ fun SignInScreen(
                         when {
                             inputEmail.isEmpty() || password.isEmpty() -> {
                                 errorMessage = "Please enter both email and password."
-                                Toast.makeText(context, "Please enter both email and password.", Toast.LENGTH_SHORT).show()
                             }
                             !AccountValidator.isValidEmail(inputEmail) -> {
                                 errorMessage = "Please enter a valid email address (e.g. name@domain.com)."
-                                Toast.makeText(context, "Invalid email format!", Toast.LENGTH_SHORT).show()
                             }
                             else -> {
                                 errorMessage = null
@@ -204,11 +198,40 @@ private fun AccountFieldLabel(text: String) {
 }
 
 @Composable
+private fun SignInErrorBanner(
+    message: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(color = SignInErrorBackground, shape = RoundedCornerShape(12.dp))
+            .border(1.dp, SignInErrorBorder, RoundedCornerShape(12.dp))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_error),
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = Color.Unspecified
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = SignInErrorRed
+        )
+    }
+}
+
+@Composable
 private fun AccountTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    isError: Boolean = false,
     singleLine: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None
@@ -226,10 +249,14 @@ private fun AccountTextField(
             .fillMaxWidth()
             .height(48.dp)
             .background(
-                color = Color(0xFFFCFDF9),
+                color = if (isError) SignInErrorFieldBackground else Color(0xFFFCFDF9),
                 shape = RoundedCornerShape(12.dp)
             )
-            .border(1.dp, Color(0xFFC4D9AA), RoundedCornerShape(12.dp)),
+            .border(
+                1.dp,
+                if (isError) SignInErrorRed else Color(0xFFC4D9AA),
+                RoundedCornerShape(12.dp)
+            ),
         decorationBox = { innerTextField ->
             Box(
                 modifier = Modifier
@@ -250,6 +277,11 @@ private fun AccountTextField(
     )
 }
 
+private val SignInErrorRed = Color(0xFFD4183D)
+private val SignInErrorBackground = Color(0xFFFDE8ED)
+private val SignInErrorBorder = Color(0xFFF4BCC7)
+private val SignInErrorFieldBackground = Color(0xFFFFF3F5)
+
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun SignInScreenPreview() {
@@ -257,8 +289,7 @@ private fun SignInScreenPreview() {
         SignInScreen(
             onSignInSuccess = {},
             onForgotPasswordClick = {},
-            onSignUpClick = {},
-            onBackClick = {}
+            onSignUpClick = {}
         )
     }
 }

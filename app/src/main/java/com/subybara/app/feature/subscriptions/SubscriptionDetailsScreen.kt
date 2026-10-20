@@ -203,7 +203,7 @@ fun SubscriptionDetailsScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(30.dp))
 
                 Button(
                     onClick = {

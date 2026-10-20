@@ -2,6 +2,7 @@ package com.subybara.app.feature.account
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,7 +12,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,112 +56,126 @@ fun WelcomeScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        val designScale = minOf(
-            maxWidth.value / WelcomeDimens.BaseWidth,
-            maxHeight.value / WelcomeDimens.BaseHeight
-        )
+        val isLandscape = maxWidth > maxHeight
+        val designScale = if (isLandscape) {
+            minOf(maxWidth.value / WelcomeDimens.BaseWidth, 1f)
+        } else {
+            minOf(
+                maxWidth.value / WelcomeDimens.BaseWidth,
+                maxHeight.value / WelcomeDimens.BaseHeight
+            )
+        }
+        val contentHeight = maxOf(maxHeight, WelcomeDimens.BaseHeight.scaledDp(designScale))
+        val screenWidth = maxWidth
 
         val horizontalPadding =
             WelcomeDimens.HorizontalPadding.scaledDp(designScale)
 
-        Image(
-            painter = painterResource(
-                id = R.drawable.bg_welcome
-            ),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-
-        Image(
-            painter = painterResource(
-                id = R.drawable.capy_welcome
-            ),
-            contentDescription = null,
+        Box(
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(
-                    y = WelcomeDimens.CapyTop.scaledDp(designScale)
-                )
-                .size(
-                    WelcomeDimens.CapySize.scaledDp(designScale)
-                ),
-            contentScale = ContentScale.Fit
-        )
-
-        Image(
-            painter = painterResource(
-                id = R.drawable.logo_subybara
-            ),
-            contentDescription = "Subybara",
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(
-                    y = WelcomeDimens.LogoTop.scaledDp(designScale)
-                )
-                .width(
-                    minOf(
-                        WelcomeDimens.LogoWidth * designScale,
-                        maxWidth.value
-                    ).dp
-                )
-                .aspectRatio(
-                    WelcomeDimens.LogoAspectRatio
-                ),
-            contentScale = ContentScale.Fit
-        )
-
-        Text(
-            text = "Track your subscriptions.\nAvoid surprise charges.",
-            color = Neutral800,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(
-                    y = WelcomeDimens.CopyTop.scaledDp(designScale)
-                )
-                .padding(
-                    horizontal = horizontalPadding
-                )
-                .fillMaxWidth(),
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center,
-                letterSpacing = 0.sp
-            )
-        )
-
-        SubybaraPrimaryButton(
-            text = "Get Started",
-            onClick = onGetStartedClick,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(
-                    y = WelcomeDimens.ButtonTop.scaledDp(designScale)
-                )
-                .padding(
-                    horizontal = horizontalPadding
-                )
                 .fillMaxWidth()
-                .height(
-                    WelcomeDimens.ButtonHeight.scaledDp(designScale)
+                .verticalScroll(rememberScrollState())
+                .height(contentHeight)
+        ) {
+            Image(
+                painter = painterResource(
+                    id = R.drawable.bg_welcome
                 ),
-            shape = RoundedCornerShape(
-                WelcomeDimens.ButtonRadius.scaledDp(designScale)
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
             )
-        )
 
-        SubybaraTextAction(
-            text = "I already have an account",
-            onClick = onSignInClick,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(
-                    y = WelcomeDimens.SignInTop.scaledDp(designScale)
+            Image(
+                painter = painterResource(
+                    id = R.drawable.capy_welcome
                 ),
-            color = Primary600
-        )
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(
+                        y = WelcomeDimens.CapyTop.scaledDp(designScale)
+                    )
+                    .size(
+                        WelcomeDimens.CapySize.scaledDp(designScale)
+                    ),
+                contentScale = ContentScale.Fit
+            )
+
+            Image(
+                painter = painterResource(
+                    id = R.drawable.logo_subybara
+                ),
+                contentDescription = "Subybara",
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(
+                        y = WelcomeDimens.LogoTop.scaledDp(designScale)
+                    )
+                    .width(
+                        minOf(
+                            WelcomeDimens.LogoWidth * designScale,
+                            screenWidth.value
+                        ).dp
+                    )
+                    .aspectRatio(
+                        WelcomeDimens.LogoAspectRatio
+                    ),
+                contentScale = ContentScale.Fit
+            )
+
+            Text(
+                text = "Track your subscriptions.\nAvoid surprise charges.",
+                color = Neutral800,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(
+                        y = WelcomeDimens.CopyTop.scaledDp(designScale)
+                    )
+                    .padding(
+                        horizontal = horizontalPadding
+                    )
+                    .fillMaxWidth(),
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontSize = 16.sp,
+                    lineHeight = 24.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    letterSpacing = 0.sp
+                )
+            )
+
+            SubybaraPrimaryButton(
+                text = "Get Started",
+                onClick = onGetStartedClick,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(
+                        y = WelcomeDimens.ButtonTop.scaledDp(designScale)
+                    )
+                    .padding(
+                        horizontal = horizontalPadding
+                    )
+                    .fillMaxWidth()
+                    .height(
+                        WelcomeDimens.ButtonHeight.scaledDp(designScale)
+                    ),
+                shape = RoundedCornerShape(
+                    WelcomeDimens.ButtonRadius.scaledDp(designScale)
+                )
+            )
+
+            SubybaraTextAction(
+                text = "I already have an account",
+                onClick = onSignInClick,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(
+                        y = WelcomeDimens.SignInTop.scaledDp(designScale)
+                    ),
+                color = Primary600
+            )
+        }
     }
 }
 
@@ -186,7 +203,6 @@ private object WelcomeDimens {
     const val ButtonRadius = 18f
 
     const val SignInTop = 650f
-    const val SignInRadius = 18f
 }
 
 private fun Float.scaledDp(

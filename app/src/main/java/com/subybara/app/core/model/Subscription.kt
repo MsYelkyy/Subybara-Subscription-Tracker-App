@@ -1,5 +1,7 @@
 package com.subybara.app.core.model
 
+import java.io.Serializable
+
 /**
  * Represents one subscription recorded by the user.
  */
@@ -36,6 +38,6 @@ data class Subscription(
     val startDate: String = "",
     val notes: String = "",
     val logoUri: String? = null
-)
+) : Serializable
 // Peso display shared by subscription list and details.
 fun formatSubscriptionAmount(amount: Double): String = "\u20B1%,.2f".format(java.util.Locale.US, amount)
