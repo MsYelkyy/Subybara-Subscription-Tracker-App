@@ -27,18 +27,18 @@ class RotationAndBackNavigationTest {
     fun signUpFormKeepsInputAfterRotation() {
         composeRule.onNodeWithText("I already have an account").performClick()
         composeRule.onNodeWithText("Don't have an account? Sign up").performClick()
-        composeRule.onNodeWithText("Full name").performTextInput("Ana Cruz")
-        composeRule.onNodeWithText("Email address").performTextInput("ana@subybara.com")
+        composeRule.onNodeWithText("Juan").performTextInput("Ana")
+        composeRule.onNodeWithText("you@example.com").performTextInput("ana@subybara.com")
 
         rotateTo(landscape = true)
 
-        composeRule.onNodeWithText("Ana Cruz").assertExists()
+        composeRule.onNodeWithText("Ana").assertExists()
         composeRule.onNodeWithText("ana@subybara.com").assertExists()
         composeRule.onNodeWithText("Sign Up").performScrollTo().assertIsDisplayed()
 
         rotateTo(landscape = false)
 
-        composeRule.onNodeWithText("Ana Cruz").assertExists()
+        composeRule.onNodeWithText("Ana").assertExists()
     }
 
     @Test

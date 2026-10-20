@@ -3,7 +3,6 @@ package com.subybara.app.feature.subscriptions
 import android.content.Context
 import android.graphics.BitmapFactory
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,8 +32,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -58,6 +55,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -68,22 +67,20 @@ import androidx.core.net.toUri
 import com.subybara.app.R
 import com.subybara.app.core.data.SubscriptionStore
 import com.subybara.app.core.designsystem.component.SubybaraBottomBar
+import com.subybara.app.core.designsystem.component.SubybaraFilterChip
 import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
 import com.subybara.app.core.designsystem.component.SubybaraSearchField
 import com.subybara.app.core.designsystem.theme.Neutral100
 import com.subybara.app.core.designsystem.theme.Neutral500
 import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.Primary200
-import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.Primary900
-import com.subybara.app.core.designsystem.theme.Secondary200
-import com.subybara.app.core.designsystem.theme.Secondary300
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
-import com.subybara.app.core.designsystem.theme.White
 import com.subybara.app.core.model.Subscription
 import com.subybara.app.core.model.SubscriptionStatus
+import com.subybara.app.core.model.formatDate
 import com.subybara.app.core.model.formatSubscriptionAmount
-import com.subybara.app.core.model.reformatDate
+import com.subybara.app.core.model.nextBillingDate
 import com.subybara.app.navigation.SubybaraDestination
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -148,7 +145,9 @@ fun SubscriptionsScreen(
             ) {
                 Text(
                     text = "My Subscription",
-                    Modifier.fillMaxWidth(),
+                    Modifier
+                        .fillMaxWidth()
+                        .semantics { heading() },
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.titleLarge,
                     color = Neutral800
@@ -325,22 +324,10 @@ private fun SubscriptionFilterChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         SubscriptionFilter.entries.forEach { filter ->
-
-            FilterChip(
+            SubybaraFilterChip(
+                label = filter.label,
                 selected = filter == selectedFilter,
-                onClick = {
-                    onFilterSelect(filter)
-                },
-                label = {
-                    Text(text = filter.label)
-                },
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = Secondary200,
-                    labelColor = Neutral800,
-                    selectedContainerColor = Primary600,
-                    selectedLabelColor = White
-                ),
-                border = BorderStroke(0.3.dp, Secondary300)
+                onClick = { onFilterSelect(filter) }
             )
         }
     }
@@ -393,8 +380,12 @@ private fun SubscriptionRow(
 
             )
 
+            val billingDate = subscription.nextBillingDate()
+                ?.let { date -> formatDate(date, "MMMM d") }
+                ?: subscription.renewalDate
+
             Text(
-                text = "Renews on ${reformatDate(subscription.renewalDate, "MMMM d")}",
+                text = "Renews on $billingDate",
                 style = MaterialTheme.typography.bodySmall,
                 color = Neutral500
             )
@@ -568,6 +559,11 @@ internal fun logoFor(
         "youtube",
         ignoreCase = true
     ) -> R.drawable.logo_youtube
+
+    name.contains(
+        "adobe",
+        ignoreCase = true
+    ) -> R.drawable.logo_adobe
 
     else -> null
 }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.imePadding
@@ -34,6 +35,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -118,7 +123,9 @@ fun ForgotPasswordScreen(
                         Spacer(Modifier.height(24.dp))
                         Text(
                             text = "Forgotten your password?",
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics { heading() },
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontSize = 20.sp,
                                 lineHeight = 24.sp,
@@ -184,7 +191,9 @@ fun ForgotPasswordScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.error,
                                 textAlign = TextAlign.Start,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .semantics { liveRegion = LiveRegionMode.Polite }
                             )
                         }
 
@@ -192,7 +201,7 @@ fun ForgotPasswordScreen(
 
                         SubybaraPrimaryButton(
                             text = "Send Reset Link",
-                            modifier = Modifier.height(44.dp),
+                            modifier = Modifier.heightIn(min = 44.dp),
                             shape = RoundedCornerShape(24.dp),
                             onClick = {
                                 if (!AccountValidator.isValidEmail(email)) {
@@ -250,6 +259,7 @@ private fun ResetConfirmation(
                 Spacer(Modifier.height(24.dp))
                 Text(
                     text = "Check your email",
+                    modifier = Modifier.semantics { heading() },
                     style = MaterialTheme.typography.titleLarge,
                     color = Neutral800
                 )
@@ -275,7 +285,7 @@ private fun ResetConfirmation(
                 SubybaraPrimaryButton(
                     text = "Return to login",
                     onClick = onBackToSignIn,
-                    modifier = Modifier.height(44.dp),
+                    modifier = Modifier.heightIn(min = 44.dp),
                     shape = RoundedCornerShape(24.dp)
                 )
             }

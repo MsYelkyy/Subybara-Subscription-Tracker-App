@@ -52,6 +52,44 @@ class SubscriptionTest {
         assertFalse(SubscriptionStore.changeStatus(999, SubscriptionStatus.PAUSED))
         assertTrue(SubscriptionStore.subscriptions.isEmpty())
     }
+    @Test fun restorePutsRemovedSubscriptionBackInPlaceOnlyOnce() = isolated {
+        listOf("First", "Second", "Third").forEach { SubscriptionStore.add(sample.copy(name = it)) }
+        val second = SubscriptionStore.subscriptions[1]
+        assertTrue(SubscriptionStore.remove(second.id))
+        SubscriptionStore.restore(second, 1)
+        assertEquals(listOf("First", "Second", "Third"), SubscriptionStore.subscriptions.map { it.name })
+        SubscriptionStore.restore(second, 1)
+        assertEquals(3, SubscriptionStore.subscriptions.size)
+    }
+    @Test fun remindersFollowAddEditPauseResumeAndCancel() = isolated {
+        val today = parseDate("October 20, 2026")!!
+        fun reminders() = SubscriptionStore.subscriptions
+            .upcomingRenewals(withinDays = RenewalReminderDays, todayMillis = today)
+        fun edit(change: (Subscription) -> Subscription) =
+            assertTrue(SubscriptionStore.update(change(SubscriptionStore.subscriptions.single())))
+        fun status(status: SubscriptionStatus) =
+            assertTrue(SubscriptionStore.changeStatus(SubscriptionStore.subscriptions.single().id, status))
+        SubscriptionStore.add(sample.copy(renewalDate = "October 22, 2026"))
+        val added = reminders().single()
+        assertEquals(2, added.daysLeft)
+        edit { it.copy(name = "Renamed", amount = 199.0) }
+        assertEquals("Renamed", reminders().single().subscription.name)
+        assertEquals(added.reminderKey, reminders().single().reminderKey)
+        edit { it.copy(renewalDate = "November 15, 2026") }
+        assertTrue(reminders().isEmpty())
+        edit { it.copy(renewalDate = "October 25, 2026") }
+        val moved = reminders().single()
+        assertEquals(5, moved.daysLeft)
+        assertNotEquals(added.reminderKey, moved.reminderKey)
+        status(SubscriptionStatus.PAUSED)
+        assertTrue(reminders().isEmpty())
+        status(SubscriptionStatus.ACTIVE)
+        assertEquals(moved.reminderKey, reminders().single().reminderKey)
+        status(SubscriptionStatus.CANCELED)
+        assertTrue(reminders().isEmpty())
+        SubscriptionStore.remove(SubscriptionStore.subscriptions.single().id)
+        assertTrue(reminders().isEmpty())
+    }
     // Test 4: Change status without removing the subscription.
     @Test fun allStatusTransitionsKeepRecord() = isolated {
         SubscriptionStore.add(sample)

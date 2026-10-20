@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -37,6 +39,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -52,14 +56,22 @@ import com.subybara.app.core.designsystem.theme.Primary700
 import com.subybara.app.core.designsystem.theme.Primary900
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
 import com.subybara.app.core.designsystem.theme.White
+import com.subybara.app.core.model.CategorySpend
 import com.subybara.app.core.model.Subscription
-import com.subybara.app.core.model.daysUntil
+import com.subybara.app.core.model.UpcomingRenewal
+import com.subybara.app.core.model.activeSubscriptions
 import com.subybara.app.core.model.formatDate
 import com.subybara.app.core.model.formatSubscriptionAmount
-import com.subybara.app.core.model.parseDate
+import com.subybara.app.core.model.renewsInLabel
+import com.subybara.app.core.model.spendByCategory
+import com.subybara.app.core.model.spendDueThisMonth
 import com.subybara.app.core.model.todayInMillis
+import com.subybara.app.core.model.totalAnnualSpend
+import com.subybara.app.core.model.totalMonthlySpend
+import com.subybara.app.core.model.upcomingRenewals
+import com.subybara.app.feature.subscriptions.SubscriptionLogo
 import com.subybara.app.navigation.SubybaraDestination
-import java.util.Locale
+import kotlin.math.roundToInt
 
 /**
  * Dashboard screen displaying spending metrics, upcoming renewal list,
@@ -67,23 +79,19 @@ import java.util.Locale
  */
 @Composable
 fun HomeScreen(
-    subscriptions: List<Subscription> = SubscriptionStore.subscriptions,
+    subscriptions: List<Subscription>,
+    modifier: Modifier = Modifier,
     onDestinationClick: (SubybaraDestination) -> Unit = {},
     onAddSubscriptionClick: () -> Unit = {},
     onViewAllRenewalsClick: () -> Unit = {},
     onSelectSubscription: (Subscription) -> Unit = {},
     onNotificationsClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    hasUnreadNotifications: Boolean = false
 ) {
-    val totalMonthlySpend = subscriptions.sumOf { it.amount }
-    val totalAnnualSpend = totalMonthlySpend * 12
-    val activeCount = subscriptions.size
-    val upcomingRenewals = subscriptions
-        .filter { subscription ->
-            parseDate(subscription.renewalDate)?.let { daysUntil(it) >= 0 } == true
-        }
-        .sortedBy { parseDate(it.renewalDate) }
-        .take(5)
+    val totalMonthlySpend = subscriptions.totalMonthlySpend()
+    val totalAnnualSpend = subscriptions.totalAnnualSpend()
+    val activeCount = subscriptions.activeSubscriptions().size
+    val upcomingRenewals = subscriptions.upcomingRenewals().take(5)
 
     Scaffold(
         modifier = modifier,
@@ -103,7 +111,12 @@ fun HomeScreen(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            item { HomeHeader(onNotificationsClick = onNotificationsClick) }
+            item {
+                HomeHeader(
+                    hasUnreadNotifications = hasUnreadNotifications,
+                    onNotificationsClick = onNotificationsClick
+                )
+            }
 
             item {
                 Box(modifier = Modifier.fillMaxWidth()) {
@@ -139,8 +152,8 @@ fun HomeScreen(
 
             item {
                 SpendingInsightsSection(
-                    totalMonthlySpend = totalMonthlySpend,
-                    subscriptions = subscriptions,
+                    spendThisMonth = subscriptions.spendDueThisMonth(),
+                    topCategory = subscriptions.spendByCategory().firstOrNull(),
                     onViewInsightsClick = { onDestinationClick(SubybaraDestination.Insights) }
                 )
             }
@@ -149,7 +162,10 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeHeader(onNotificationsClick: () -> Unit) {
+private fun HomeHeader(
+    hasUnreadNotifications: Boolean,
+    onNotificationsClick: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -158,6 +174,7 @@ private fun HomeHeader(onNotificationsClick: () -> Unit) {
         Column {
             Text(
                 text = "Good Morning!",
+                modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -171,8 +188,14 @@ private fun HomeHeader(onNotificationsClick: () -> Unit) {
 
         IconButton(onClick = onNotificationsClick) {
             Icon(
-                painter = painterResource(R.drawable.ic_bell),
-                contentDescription = "Notifications",
+                painter = painterResource(
+                    if (hasUnreadNotifications) R.drawable.ic_bell_unread else R.drawable.ic_bell
+                ),
+                contentDescription = if (hasUnreadNotifications) {
+                    "Notifications, new renewal reminders"
+                } else {
+                    "Notifications"
+                },
                 tint = Color.Unspecified
             )
         }
@@ -195,19 +218,19 @@ private fun OverviewMetricsCard(
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Column {
                     Text(
-                        text = "Total Monthly Spend",
+                        text = "Estimated Monthly Cost",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                     )
                     Text(
-                        text = "₱${String.format(Locale.US, "%,.2f", monthlySpend)}",
+                        text = formatSubscriptionAmount(monthlySpend),
                         style = MaterialTheme.typography.titleLarge,
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
@@ -240,15 +263,20 @@ private fun OverviewMetricsCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Annual Spend",
+                        text = "Estimated Annual Cost",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                     )
                     Text(
-                        text = "₱${String.format(Locale.US, "%,.2f", annualSpend)}",
+                        text = formatSubscriptionAmount(annualSpend),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        maxLines = 1,
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = 8.sp,
+                            maxFontSize = MaterialTheme.typography.titleMedium.fontSize
+                        )
                     )
                 }
 
@@ -284,6 +312,7 @@ private fun SpendingTrendSection() {
     ) {
         Text(
             text = "Spending Trend",
+            modifier = Modifier.semantics { heading() },
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -329,7 +358,7 @@ private fun SpendingTrendSection() {
 
 @Composable
 private fun UpcomingRenewalsSection(
-    renewals: List<Subscription>,
+    renewals: List<UpcomingRenewal>,
     onViewAllClick: () -> Unit,
     onSelectSubscription: (Subscription) -> Unit
 ) {
@@ -344,6 +373,9 @@ private fun UpcomingRenewalsSection(
         ) {
             Text(
                 text = "Upcoming Renewals",
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { heading() },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -364,10 +396,17 @@ private fun UpcomingRenewalsSection(
                 .border(width = 1.dp, color = HomeCardGreenBorder, shape = HomeCardShape)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                renewals.forEachIndexed { index, subscription ->
+                if (renewals.isEmpty()) {
+                    Text(
+                        text = "No upcoming renewals.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Neutral500
+                    )
+                }
+                renewals.forEachIndexed { index, renewal ->
                     DashboardRenewalRow(
-                        subscription = subscription,
-                        onClick = { onSelectSubscription(subscription) }
+                        renewal = renewal,
+                        onClick = { onSelectSubscription(renewal.subscription) }
                     )
                     if (index < renewals.lastIndex) {
                         Spacer(modifier = Modifier.height(12.dp))
@@ -380,12 +419,12 @@ private fun UpcomingRenewalsSection(
 
 @Composable
 private fun DashboardRenewalRow(
-    subscription: Subscription,
+    renewal: UpcomingRenewal,
     onClick: () -> Unit
 ) {
-    val renewalText = parseDate(subscription.renewalDate)?.let { dateMillis ->
-        "${renewsInText(daysUntil(dateMillis))} • ${formatDate(dateMillis, "MMM d")}"
-    } ?: subscription.renewalDate
+    val subscription = renewal.subscription
+    val countdown = renewsInLabel(renewal.daysLeft).replaceFirstChar { it.uppercase() }
+    val renewalText = "$countdown • ${formatDate(renewal.dateMillis, "MMM d")}"
 
     Row(
         modifier = Modifier
@@ -393,7 +432,10 @@ private fun DashboardRenewalRow(
             .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        SubscriptionLogo(name = subscription.name)
+        SubscriptionLogo(
+            name = subscription.name,
+            logoUri = subscription.logoUri
+        )
 
         Spacer(modifier = Modifier.width(12.dp))
 
@@ -414,7 +456,7 @@ private fun DashboardRenewalRow(
         }
 
         Text(
-            text = "₱${String.format(Locale.US, "%,.2f", subscription.amount)}",
+            text = formatSubscriptionAmount(subscription.amount),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -432,22 +474,12 @@ private fun DashboardRenewalRow(
 
 @Composable
 private fun SpendingInsightsSection(
-    totalMonthlySpend: Double,
-    subscriptions: List<Subscription>,
+    spendThisMonth: Double,
+    topCategory: CategorySpend?,
     onViewInsightsClick: () -> Unit
 ) {
-    val topCategory = subscriptions
-        .groupBy { it.category.label }
-        .maxByOrNull { it.value.sumOf { item -> item.amount } }
-
-    val topCategoryName = topCategory?.key ?: "N/A"
-    val topCategoryAmount = topCategory?.value?.sumOf { it.amount } ?: 0.0
-    val topCategoryPercentage = if (totalMonthlySpend > 0) {
-        ((topCategoryAmount / totalMonthlySpend) * 100).toInt()
-    } else {
-        0
-    }
-    val averageMonthlySpend = subscriptions.sumOf { monthlyCost(it) }
+    val topCategoryName = topCategory?.category?.label ?: "N/A"
+    val topCategoryPercentage = ((topCategory?.share ?: 0.0) * 100).roundToInt()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -455,6 +487,7 @@ private fun SpendingInsightsSection(
     ) {
         Text(
             text = "Spending Insights",
+            modifier = Modifier.semantics { heading() },
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -469,16 +502,9 @@ private fun SpendingInsightsSection(
         ) {
             InsightMetricRow(
                 iconRes = R.drawable.ic_spending_trend,
-                title = "First month tracked",
-                subtitle = "Your baseline starts this month",
-                value = formatSubscriptionAmount(totalMonthlySpend)
-            )
-
-            InsightMetricRow(
-                iconRes = R.drawable.ic_average_spend,
-                title = "Average monthly spend",
-                subtitle = null,
-                value = formatSubscriptionAmount(averageMonthlySpend)
+                title = "Estimated bills this month",
+                subtitle = "Based on billing dates",
+                value = formatSubscriptionAmount(spendThisMonth)
             )
 
             InsightMetricRow(
@@ -568,17 +594,13 @@ private fun InsightMetricRow(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Neutral800,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                color = Neutral800
             )
             if (subtitle != null) {
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Neutral500,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    color = Neutral500
                 )
             }
         }
@@ -599,59 +621,6 @@ private val HomeCardGreenBorder = Primary300.copy(alpha = 0.5f)
 private val OverviewDividerColor = White.copy(alpha = 0.08f)
 private val InsightsFooterBackground = Color(0xFFEBF4DF)
 private val TrendIconBackground = Color(0xFFFFF3D8)
-
-private fun monthlyCost(subscription: Subscription): Double = when (subscription.billingCycle) {
-    "Weekly" -> subscription.amount * 52 / 12
-    "Quarterly" -> subscription.amount / 3
-    "Yearly" -> subscription.amount / 12
-    else -> subscription.amount
-}
-
-private fun renewsInText(days: Int): String = when (days) {
-    0 -> "Today"
-    1 -> "In 1 day"
-    else -> "In $days days"
-}
-
-@Composable
-private fun SubscriptionLogo(
-    name: String,
-    modifier: Modifier = Modifier
-) {
-    val logoModifier = modifier
-        .size(40.dp)
-        .clip(RoundedCornerShape(10.dp))
-
-    val logoRes = logoFor(name)
-
-    if (logoRes != null) {
-        Image(
-            painter = painterResource(id = logoRes),
-            contentDescription = "$name logo",
-            modifier = logoModifier,
-            contentScale = ContentScale.Fit
-        )
-    } else {
-        Box(
-            modifier = logoModifier.background(MaterialTheme.colorScheme.secondaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = name.take(1).uppercase(),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
-
-@DrawableRes
-private fun logoFor(name: String): Int? = when {
-    name.contains("netflix", ignoreCase = true) -> R.drawable.logo_netflix
-    name.contains("spotify", ignoreCase = true) -> R.drawable.logo_spotify
-    name.contains("youtube", ignoreCase = true) -> R.drawable.logo_youtube
-    else -> null
-}
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

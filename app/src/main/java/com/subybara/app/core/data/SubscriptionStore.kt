@@ -111,4 +111,20 @@ object SubscriptionStore {
             subscription.id == subscriptionId
         }
     }
+
+    /**
+     * Puts back a subscription that was just removed, at its previous position.
+     *
+     * Does nothing if a subscription with the same ID is already in the list.
+     */
+    fun restore(subscription: Subscription, position: Int) {
+        if (findById(subscription.id) != null) {
+            return
+        }
+
+        _subscriptions.add(
+            position.coerceIn(0, _subscriptions.size),
+            subscription
+        )
+    }
 }

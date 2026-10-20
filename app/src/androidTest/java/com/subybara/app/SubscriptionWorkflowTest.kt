@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.*
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.espresso.Espresso
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
 import com.subybara.app.core.model.*
 import com.subybara.app.feature.subscriptions.*
@@ -19,7 +20,10 @@ class SubscriptionWorkflowTest {
         category = SubscriptionCategory.MUSIC, status = SubscriptionStatus.ACTIVE,
         paymentMethod = "GCash")
 
-    private fun save() = compose.onNodeWithText("Save Subscription").performScrollTo().performClick()
+    private fun save() {
+        Espresso.closeSoftKeyboard()
+        compose.onNodeWithText("Save Subscription").performScrollTo().performClick()
+    }
 
     // Test 1: Add a valid subscription.
     @Test fun addValidSubscription() {

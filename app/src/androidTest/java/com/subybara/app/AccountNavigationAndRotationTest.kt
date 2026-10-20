@@ -2,9 +2,12 @@ package com.subybara.app
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.test.espresso.Espresso
 import com.subybara.app.core.data.AccountStore
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
 import com.subybara.app.feature.profile.ProfileScreen
@@ -39,12 +42,15 @@ class AccountNavigationAndRotationTest {
         composeTestRule.onNodeWithText("Don't have an account? Sign up").performClick()
 
         // Fill out Sign Up form
-        composeTestRule.onNodeWithText("Full name").performTextInput("Mary-Jane O'Connor")
-        composeTestRule.onNodeWithText("Email address").performTextInput("mary.jane@subybara.technology")
-        composeTestRule.onNodeWithText("Password").performTextInput("secure123")
+        composeTestRule.onNodeWithText("Juan").performTextInput("Mary-Jane")
+        composeTestRule.onNodeWithText("Dela Cruz").performTextInput("O'Connor")
+        composeTestRule.onNodeWithText("you@example.com").performTextInput("mary.jane@subybara.technology")
+        composeTestRule.onNodeWithText("Min. 6 characters").performTextInput("secure123")
+        composeTestRule.onNodeWithText("Re-enter password").performTextInput("secure123")
+        Espresso.closeSoftKeyboard()
 
         // Submit Sign Up
-        composeTestRule.onNodeWithText("Sign Up").performClick()
+        composeTestRule.onNodeWithText("Sign Up").performScrollTo().performClick()
 
         // Success Dialog shown
         composeTestRule.onNodeWithText("Account Created!").assertIsDisplayed()
@@ -72,7 +78,7 @@ class AccountNavigationAndRotationTest {
             }
         }
 
-        composeTestRule.onNodeWithText("A").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("User Avatar").assertIsDisplayed()
         composeTestRule.onNodeWithText("Alex Morgan").assertIsDisplayed()
         composeTestRule.onNodeWithText("alex.morgan@subybara.online").assertIsDisplayed()
     }
