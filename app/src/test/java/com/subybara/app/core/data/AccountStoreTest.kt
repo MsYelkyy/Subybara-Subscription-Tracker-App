@@ -14,9 +14,9 @@ class AccountStoreTest {
     @Test
     fun initialAccountState_hasDefaultValues() {
         val user = AccountStore.currentUser
-        assertEquals("Harty User", user.name)
-        assertEquals("harty@subybara.com", user.email)
-        assertEquals("H", user.initial)
+        assertEquals("Manuel Garcia", user.name)
+        assertEquals("capyfriend@email.com", user.email)
+        assertEquals("M", user.initial)
     }
 
     @Test

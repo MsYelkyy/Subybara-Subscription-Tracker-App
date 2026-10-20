@@ -18,8 +18,8 @@ object AccountStore {
      */
     var currentUser by mutableStateOf(
         UserAccount(
-            name = "Harty User",
-            email = "harty@subybara.com",
+            name = "Manuel Garcia",
+            email = "capyfriend@email.com",
         )
     )
         private set
@@ -39,8 +39,8 @@ object AccountStore {
      */
     fun reset() {
         currentUser = UserAccount(
-            name = "Harty User",
-            email = "harty@subybara.com",
+            name = "Manuel Garcia",
+            email = "capyfriend@email.com",
         )
     }
 }
