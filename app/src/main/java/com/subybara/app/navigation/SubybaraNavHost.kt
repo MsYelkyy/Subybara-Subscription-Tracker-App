@@ -17,12 +17,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.subybara.app.core.data.SubscriptionStore
+import com.subybara.app.core.model.Subscription
 import com.subybara.app.feature.account.ForgotPasswordScreen
 import com.subybara.app.feature.account.SignInScreen
 import com.subybara.app.feature.account.SignUpScreen
 import com.subybara.app.feature.account.WelcomeScreen
 import com.subybara.app.feature.home.HomeScreen
 import com.subybara.app.feature.insights.InsightsScreen
+import com.subybara.app.feature.notifications.NotificationsScreen
 import com.subybara.app.feature.profile.ProfileScreen
 import com.subybara.app.feature.renewals.UpcomingRenewalsScreen
 import com.subybara.app.feature.subscriptions.AddSubscriptionScreen
@@ -39,6 +41,9 @@ fun SubybaraNavHost() {
     var currentRoute by rememberSaveable { mutableStateOf(SubybaraDestination.Welcome.route) }
     var selectedSubscriptionId by rememberSaveable { mutableIntStateOf(0) }
     var addSubscriptionOrigin by rememberSaveable {
+        mutableStateOf(SubybaraDestination.Subscriptions.route)
+    }
+    var subscriptionDetailsOrigin by rememberSaveable {
         mutableStateOf(SubybaraDestination.Subscriptions.route)
     }
 
@@ -60,6 +65,12 @@ fun SubybaraNavHost() {
     val onAddSubscriptionClick: () -> Unit = {
         addSubscriptionOrigin = currentRoute
         navigator.navigateTo(SubybaraDestination.AddSubscription)
+    }
+
+    val onSubscriptionClick: (Subscription) -> Unit = { subscription ->
+        selectedSubscriptionId = subscription.id
+        subscriptionDetailsOrigin = currentRoute
+        navigator.navigateTo(SubybaraDestination.SubscriptionDetails)
     }
 
     // Replace the current message so repeated taps don't queue old snackbars.
@@ -90,13 +101,21 @@ fun SubybaraNavHost() {
     BackHandler(
         enabled = destination == SubybaraDestination.SubscriptionDetails ||
             destination == SubybaraDestination.AddSubscription ||
-            destination == SubybaraDestination.EditSubscription
+            destination == SubybaraDestination.EditSubscription ||
+            destination == SubybaraDestination.Renewals ||
+            destination == SubybaraDestination.Notifications
     ) {
         navigator.navigateTo(
             when (destination) {
                 SubybaraDestination.EditSubscription -> SubybaraDestination.SubscriptionDetails
+                SubybaraDestination.SubscriptionDetails ->
+                    SubybaraDestination.fromRoute(subscriptionDetailsOrigin)
+
                 SubybaraDestination.AddSubscription ->
                     SubybaraDestination.fromRoute(addSubscriptionOrigin)
+
+                SubybaraDestination.Renewals,
+                SubybaraDestination.Notifications -> SubybaraDestination.Home
 
                 else -> SubybaraDestination.Subscriptions
             }
@@ -131,16 +150,13 @@ fun SubybaraNavHost() {
                 onDestinationClick = onMainDestinationClick,
                 onAddSubscriptionClick = onAddSubscriptionClick,
                 onViewAllRenewalsClick = { navigator.navigateTo(SubybaraDestination.Renewals) },
-                onSelectSubscription = { // Navigate to detail screen when ready
-                }
+                onSelectSubscription = onSubscriptionClick,
+                onNotificationsClick = { navigator.navigateTo(SubybaraDestination.Notifications) }
             )
 
             SubybaraDestination.Subscriptions -> SubscriptionsScreen(
                 subscriptions = SubscriptionStore.subscriptions,
-                onSubscriptionClick = { subscription ->
-                    selectedSubscriptionId = subscription.id
-                    navigator.navigateTo(SubybaraDestination.SubscriptionDetails)
-                },
+                onSubscriptionClick = onSubscriptionClick,
                 onDestinationClick = onMainDestinationClick,
                 onAddSubscriptionClick = onAddSubscriptionClick
             )
@@ -148,7 +164,9 @@ fun SubybaraNavHost() {
             SubybaraDestination.SubscriptionDetails -> selectedSubscription?.let { subscription ->
                 SubscriptionDetailsScreen(
                     subscription = subscription,
-                    onBackClick = { navigator.navigateTo(SubybaraDestination.Subscriptions) },
+                    onBackClick = {
+                        navigator.navigateTo(SubybaraDestination.fromRoute(subscriptionDetailsOrigin))
+                    },
                     onEditClick = { navigator.navigateTo(SubybaraDestination.EditSubscription) },
                     onStatusChange = { status ->
                         if (SubscriptionStore.changeStatus(subscription.id, status)) {
@@ -157,7 +175,7 @@ fun SubybaraNavHost() {
                     },
                     onRemoveSubscriptionClick = {
                         SubscriptionStore.remove(subscription.id)
-                        navigator.navigateTo(SubybaraDestination.Subscriptions)
+                        navigator.navigateTo(SubybaraDestination.fromRoute(subscriptionDetailsOrigin))
                         showFeedback("Subscription deleted")
                     }
                 )
@@ -193,7 +211,12 @@ fun SubybaraNavHost() {
 
             SubybaraDestination.Renewals -> UpcomingRenewalsScreen(
                 subscriptions = SubscriptionStore.subscriptions,
-                onNavigateBack = { navigator.navigateTo(SubybaraDestination.Home) }
+                onNavigateBack = { navigator.navigateTo(SubybaraDestination.Home) },
+                onSelectSubscription = onSubscriptionClick
+            )
+
+            SubybaraDestination.Notifications -> NotificationsScreen(
+                onBackClick = { navigator.navigateTo(SubybaraDestination.Home) }
             )
 
             SubybaraDestination.Insights -> InsightsScreen(

@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,10 +29,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,14 +45,21 @@ import androidx.compose.ui.unit.sp
 import com.subybara.app.R
 import com.subybara.app.core.data.SubscriptionStore
 import com.subybara.app.core.designsystem.component.SubybaraBottomBar
-import com.subybara.app.core.designsystem.component.SubybaraCard
+import com.subybara.app.core.designsystem.theme.Neutral500
+import com.subybara.app.core.designsystem.theme.Neutral800
+import com.subybara.app.core.designsystem.theme.Primary300
+import com.subybara.app.core.designsystem.theme.Primary700
+import com.subybara.app.core.designsystem.theme.Primary900
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.designsystem.theme.White
 import com.subybara.app.core.model.Subscription
+import com.subybara.app.core.model.daysUntil
+import com.subybara.app.core.model.formatDate
+import com.subybara.app.core.model.formatSubscriptionAmount
+import com.subybara.app.core.model.parseDate
+import com.subybara.app.core.model.todayInMillis
 import com.subybara.app.navigation.SubybaraDestination
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 /**
  * Dashboard screen displaying spending metrics, upcoming renewal list,
@@ -63,12 +72,18 @@ fun HomeScreen(
     onAddSubscriptionClick: () -> Unit = {},
     onViewAllRenewalsClick: () -> Unit = {},
     onSelectSubscription: (Subscription) -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val totalMonthlySpend = subscriptions.sumOf { it.amount }
     val totalAnnualSpend = totalMonthlySpend * 12
     val activeCount = subscriptions.size
-    val upcomingRenewals = subscriptions.sortedBy { it.renewalDate }.take(5)
+    val upcomingRenewals = subscriptions
+        .filter { subscription ->
+            parseDate(subscription.renewalDate)?.let { daysUntil(it) >= 0 } == true
+        }
+        .sortedBy { parseDate(it.renewalDate) }
+        .take(5)
 
     Scaffold(
         modifier = modifier,
@@ -88,7 +103,7 @@ fun HomeScreen(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            item { HomeHeader() }
+            item { HomeHeader(onNotificationsClick = onNotificationsClick) }
 
             item {
                 Box(modifier = Modifier.fillMaxWidth()) {
@@ -134,7 +149,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeHeader() {
+private fun HomeHeader(onNotificationsClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -154,11 +169,11 @@ private fun HomeHeader() {
             )
         }
 
-        IconButton(onClick = {}) {
+        IconButton(onClick = onNotificationsClick) {
             Icon(
-                painter = painterResource(R.drawable.ic_search),
-                contentDescription = "Search",
-                tint = MaterialTheme.colorScheme.onBackground
+                painter = painterResource(R.drawable.ic_bell),
+                contentDescription = "Notifications",
+                tint = Color.Unspecified
             )
         }
     }
@@ -172,8 +187,8 @@ private fun OverviewMetricsCard(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.primary,
+        shape = HomeCardShape,
+        color = Primary900,
         contentColor = MaterialTheme.colorScheme.onPrimary
     ) {
         Column(
@@ -203,7 +218,7 @@ private fun OverviewMetricsCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
+                        .background(Primary700)
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
@@ -215,10 +230,12 @@ private fun OverviewMetricsCard(
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
+            HorizontalDivider(color = OverviewDividerColor)
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -235,7 +252,13 @@ private fun OverviewMetricsCard(
                     )
                 }
 
-                Column(modifier = Modifier.weight(1f)) {
+                VerticalDivider(color = OverviewDividerColor)
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 16.dp)
+                ) {
                     Text(
                         text = "Active Subscriptions",
                         style = MaterialTheme.typography.bodySmall,
@@ -266,18 +289,38 @@ private fun SpendingTrendSection() {
             color = MaterialTheme.colorScheme.onBackground
         )
 
-        SubybaraCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .padding(16.dp),
+                    .size(76.dp)
+                    .background(color = TrendIconBackground, shape = HomeCardShape),
                 contentAlignment = Alignment.Center
             ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_trend_bars),
+                    contentDescription = null
+                )
+            }
+
+            Spacer(modifier = Modifier.width(18.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "[ Spending Trend Line Graph ]",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Tracking started in ${formatDate(todayInMillis(), "MMMM")}",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Neutral800
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Your spending trend will appear here once more monthly records become available.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Neutral500
                 )
             }
         }
@@ -315,7 +358,11 @@ private fun UpcomingRenewalsSection(
             )
         }
 
-        SubybaraCard(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(width = 1.dp, color = HomeCardGreenBorder, shape = HomeCardShape)
+        ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 renewals.forEachIndexed { index, subscription ->
                     DashboardRenewalRow(
@@ -336,8 +383,9 @@ private fun DashboardRenewalRow(
     subscription: Subscription,
     onClick: () -> Unit
 ) {
-    val daysRemaining = calculateDaysRemaining(subscription.renewalDate)
-    val formattedDate = parseFormattedDate(subscription.renewalDate)
+    val renewalText = parseDate(subscription.renewalDate)?.let { dateMillis ->
+        "${renewsInText(daysUntil(dateMillis))} • ${formatDate(dateMillis, "MMM d")}"
+    } ?: subscription.renewalDate
 
     Row(
         modifier = Modifier
@@ -353,13 +401,13 @@ private fun DashboardRenewalRow(
             Text(
                 text = subscription.name,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "In $daysRemaining days • $formattedDate",
+                text = renewalText,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -368,7 +416,6 @@ private fun DashboardRenewalRow(
         Text(
             text = "₱${String.format(Locale.US, "%,.2f", subscription.amount)}",
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
 
@@ -400,6 +447,7 @@ private fun SpendingInsightsSection(
     } else {
         0
     }
+    val averageMonthlySpend = subscriptions.sumOf { monthlyCost(it) }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -412,27 +460,33 @@ private fun SpendingInsightsSection(
             color = MaterialTheme.colorScheme.onBackground
         )
 
-        SubybaraCard(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                InsightMetricRow(
-                    title = "First month tracked",
-                    subtitle = "Compared to last month",
-                    value = "₱${String.format(Locale.US, "%,.2f", totalMonthlySpend)}",
-                    valueSubText = "This month"
-                )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(width = 1.dp, color = HomeCardGreenBorder, shape = HomeCardShape)
+                .padding(horizontal = 12.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            InsightMetricRow(
+                iconRes = R.drawable.ic_spending_trend,
+                title = "First month tracked",
+                subtitle = "Your baseline starts this month",
+                value = formatSubscriptionAmount(totalMonthlySpend)
+            )
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            InsightMetricRow(
+                iconRes = R.drawable.ic_average_spend,
+                title = "Average monthly spend",
+                subtitle = null,
+                value = formatSubscriptionAmount(averageMonthlySpend)
+            )
 
-                InsightMetricRow(
-                    title = "Top Category",
-                    subtitle = topCategoryName,
-                    value = "$topCategoryPercentage%",
-                    valueSubText = null
-                )
-            }
+            InsightMetricRow(
+                iconRes = R.drawable.ic_category_breakdown,
+                title = "Top Category",
+                subtitle = topCategoryName,
+                value = "$topCategoryPercentage%"
+            )
         }
 
         Surface(
@@ -440,11 +494,11 @@ private fun SpendingInsightsSection(
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(16.dp)
+                    color = Primary300,
+                    shape = HomeCardShape
                 ),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+            shape = HomeCardShape,
+            color = InsightsFooterBackground
         ) {
             Row(
                 modifier = Modifier.padding(16.dp),
@@ -463,14 +517,13 @@ private fun SpendingInsightsSection(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "You're in control!",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Primary900
                     )
                     Text(
                         text = "Keep tracking to make smarter subscription choices.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                        color = Neutral500
                     )
                 }
 
@@ -479,12 +532,13 @@ private fun SpendingInsightsSection(
                 Button(
                     onClick = onViewInsightsClick,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = Primary900,
+                        contentColor = White
                     ),
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                 ) {
-                    Text(text = "View Insights", fontSize = 12.sp)
+                    Text(text = "View Insights", fontSize = 11.sp)
                 }
             }
         }
@@ -493,66 +547,70 @@ private fun SpendingInsightsSection(
 
 @Composable
 private fun InsightMetricRow(
+    @DrawableRes iconRes: Int,
     title: String,
-    subtitle: String,
-    value: String,
-    valueSubText: String?
+    subtitle: String?,
+    value: String
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.secondaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_search),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
+        Image(
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(30.dp)
+        )
 
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Neutral800,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (subtitle != null) {
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Neutral500,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
 
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            if (valueSubText != null) {
-                Text(
-                    text = valueSubText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = Primary900
+        )
     }
+}
+
+private val HomeCardShape = RoundedCornerShape(16.dp)
+private val HomeCardGreenBorder = Primary300.copy(alpha = 0.5f)
+private val OverviewDividerColor = White.copy(alpha = 0.08f)
+private val InsightsFooterBackground = Color(0xFFEBF4DF)
+private val TrendIconBackground = Color(0xFFFFF3D8)
+
+private fun monthlyCost(subscription: Subscription): Double = when (subscription.billingCycle) {
+    "Weekly" -> subscription.amount * 52 / 12
+    "Quarterly" -> subscription.amount / 3
+    "Yearly" -> subscription.amount / 12
+    else -> subscription.amount
+}
+
+private fun renewsInText(days: Int): String = when (days) {
+    0 -> "Today"
+    1 -> "In 1 day"
+    else -> "In $days days"
 }
 
 @Composable
@@ -585,25 +643,6 @@ private fun SubscriptionLogo(
             )
         }
     }
-}
-
-private fun parseFormattedDate(rawDate: String): String {
-    return runCatching {
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-        val date = sdf.parse(rawDate) ?: Date()
-        val monthSdf = SimpleDateFormat("MMM d", Locale.US)
-        monthSdf.format(date)
-    }.getOrDefault("Jul 24")
-}
-
-private fun calculateDaysRemaining(rawDate: String): Long {
-    return runCatching {
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-        val targetDate = sdf.parse(rawDate) ?: Date()
-        val diffMs = targetDate.time - System.currentTimeMillis()
-        val days = TimeUnit.MILLISECONDS.toDays(diffMs)
-        if (days < 0) 0L else days
-    }.getOrDefault(10L)
 }
 
 @DrawableRes
