@@ -52,7 +52,6 @@ import com.subybara.app.core.util.AccountValidator
 
 private val WarmBrown = Color(0xFF6A4C32)
 private val WarmBrownSubtle = Color(0x8C6A4C32)
-private val SignUpButtonColor = Color(0xFFB5CA99)
 
 /**
  * Sign Up screen allowing new users to register an account matching Figma specifications.
@@ -228,7 +227,7 @@ fun SignUpScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(44.dp)
-                    .background(color = SignUpButtonColor, shape = RoundedCornerShape(20.dp))
+                    .background(color = Primary600, shape = RoundedCornerShape(20.dp))
                     .clickable {
                         showErrors = true
                         emailTakenError = null

@@ -8,6 +8,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -15,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalAccessibilityManager
@@ -39,12 +41,16 @@ import com.subybara.app.feature.subscriptions.SubscriptionDetailsScreen
 import com.subybara.app.feature.subscriptions.SubscriptionSnackbarHost
 import com.subybara.app.feature.subscriptions.SubscriptionsScreen
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
 private const val MessageMillis = 2_000L
 private const val UndoMessageMillis = 5_000L
+
+/** Navigation taps are ignored until a new screen has been drawn and shown for this long. */
+internal var navigationCooldownMillis = 400L
 
 @Composable
 fun SubybaraNavHost() {
@@ -65,7 +71,25 @@ fun SubybaraNavHost() {
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    val navigator = DestinationNavigator { destination -> currentRoute = destination.route }
+    var acceptsNavigation by remember { mutableStateOf(true) }
+    LaunchedEffect(currentRoute) {
+        if (!acceptsNavigation) {
+            repeat(2) { withFrameNanos { } }
+            delay(navigationCooldownMillis)
+            acceptsNavigation = true
+        }
+    }
+    fun showDestination(destination: SubybaraDestination) {
+        if (destination.route != currentRoute) {
+            acceptsNavigation = navigationCooldownMillis == 0L
+            currentRoute = destination.route
+        }
+    }
+    val navigator = DestinationNavigator { destination ->
+        if (acceptsNavigation) {
+            showDestination(destination)
+        }
+    }
 
     val onMainDestinationClick: (SubybaraDestination) -> Unit = { destination ->
         if (destination == SubybaraDestination.Home ||
@@ -146,7 +170,7 @@ fun SubybaraNavHost() {
             destination == SubybaraDestination.Renewals ||
             destination == SubybaraDestination.Notifications
     ) {
-        navigator.navigateTo(
+        showDestination(
             when (destination) {
                 SubybaraDestination.SignIn -> SubybaraDestination.Welcome
                 SubybaraDestination.SignUp -> SubybaraDestination.fromRoute(signUpOrigin)
@@ -283,7 +307,7 @@ fun SubybaraNavHost() {
                     signUpOrigin = SubybaraDestination.Welcome.route
                     seenReminderKeys = emptyList()
                     // Navigation replaces one route; no authenticated back stack remains.
-                    navigator.navigateTo(SubybaraDestination.Welcome)
+                    showDestination(SubybaraDestination.Welcome)
                 }
             )
 

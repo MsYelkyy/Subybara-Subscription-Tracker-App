@@ -65,7 +65,8 @@ Account and subscription data are stored in memory and reset when the app proces
 
 ### Requirements
 
-- Android Studio with Android SDK support
+- Android Studio 2026.1.2 or newer (the version used to build and test the app)
+- Android Gradle Plugin 9.3.3 and Gradle 9.8.0 (included through the Gradle wrapper, no separate install needed)
 - JDK 17 or newer
 - Android emulator or physical device running Android 7.0 or newer
 
@@ -94,7 +95,6 @@ The Android implementation generally follows the approved MS1 Figma prototype. T
 | Spending Trend and Insights charts use projected monthly bills instead of historical spending | The app does not record actual payments, so forecasts are calculated from subscription billing details. |
 | Chart month labels are generated dynamically | Display the current month and the next five months instead of the fixed months shown in Figma. |
 | Added a demo account with sample subscriptions | Allow the mentor to explore populated screens while new users can still test empty states. |
-| Some Profile settings remain nonfunctional placeholders | These settings are outside the approved MS1 use cases and are not part of the MS2 implementation scope. |
 
 ## Testing
 
@@ -123,7 +123,7 @@ To run automated checks:
 - **Simulated authentication:** No backend authentication or actual password recovery emails.
 - **Estimated costs:** Charts project upcoming bills based on subscription details, not actual payment history.
 - **In-app notifications only:** No scheduled push notifications.
-- **Profile settings:** Some settings remain outside the implemented MS2 functionality.
+- **Profile settings are informational only:** The initial Figma design presented these settings as interactive options. In MS2, they are displayed as non-interactive information because their workflows were not included in the approved MS1 use cases. Log out remains functional.
 
 ---
 

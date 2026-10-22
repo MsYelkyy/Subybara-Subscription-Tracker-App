@@ -52,8 +52,8 @@ import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.Neutral900
 import com.subybara.app.core.designsystem.theme.Primary300
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
-import com.subybara.app.core.designsystem.theme.Tertiary100
 import com.subybara.app.core.designsystem.theme.White
+import com.subybara.app.core.model.RenewalReminderDays
 import com.subybara.app.navigation.SubybaraDestination
 
 /**
@@ -153,13 +153,6 @@ fun ProfileScreen(
                             color = Neutral500
                         )
                     }
-
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_chevron_right),
-                        contentDescription = null,
-                        tint = Neutral500,
-                        modifier = Modifier.size(20.dp)
-                    )
                 }
             }
 
@@ -189,7 +182,7 @@ fun ProfileScreen(
                     ProfileSettingRow(
                         iconRes = R.drawable.ic_bell,
                         label = "Renewal Reminders",
-                        value = "3 Days Before"
+                        value = "$RenewalReminderDays Days Before"
                     )
 
                     HorizontalDivider(color = CardBorder, thickness = 0.5.dp)
@@ -253,8 +246,8 @@ fun ProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(44.dp)
-                    .background(color = Tertiary100, shape = RoundedCornerShape(20.dp))
-                    .border(width = 1.dp, color = Color(0xFFF2D2CB), shape = RoundedCornerShape(20.dp))
+                    .background(color = Color(0xFFAC121B), shape = RoundedCornerShape(20.dp))
+                    .border(width = 1.dp, color = Color(0xFFAC121B), shape = RoundedCornerShape(20.dp))
                     .clickable(onClick = onSignOutClick),
                 contentAlignment = Alignment.Center
             ) {
@@ -264,7 +257,7 @@ fun ProfileScreen(
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp
                     ),
-                    color = Color(0xFFAC121B)
+                    color = White
                 )
             }
         }
@@ -277,12 +270,9 @@ private fun ProfileSettingRow(
     label: String,
     modifier: Modifier = Modifier,
     value: String? = null,
-    onClick: () -> Unit = {},
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -320,15 +310,7 @@ private fun ProfileSettingRow(
                 ),
                 color = Neutral500
             )
-            Spacer(modifier = Modifier.width(8.dp))
         }
-
-        Icon(
-            painter = painterResource(id = R.drawable.ic_chevron_right),
-            contentDescription = null,
-            tint = Neutral500,
-            modifier = Modifier.size(16.dp)
-        )
     }
 }
 
