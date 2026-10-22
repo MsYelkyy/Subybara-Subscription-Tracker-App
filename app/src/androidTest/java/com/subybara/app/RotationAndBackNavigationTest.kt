@@ -11,6 +11,9 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso
 import com.subybara.app.core.data.SubscriptionStore
+import org.junit.Before
+import org.junit.After
+import com.subybara.app.core.model.*
 import org.junit.Rule
 import org.junit.Test
 
@@ -22,6 +25,22 @@ class RotationAndBackNavigationTest {
 
     @get:Rule
     val composeRule = createAndroidComposeRule<MainActivity>()
+
+    private var fixtureId = 0
+
+    @Before fun addFixture() {
+        composeRule.runOnIdle {
+            SubscriptionStore.add(Subscription(name = "Rotation fixture", amount = 100.0,
+                billingCycle = "Monthly", renewalDate = formatDate(todayInMillis()),
+                category = SubscriptionCategory.MUSIC, status = SubscriptionStatus.ACTIVE,
+                paymentMethod = "GCash"))
+            fixtureId = SubscriptionStore.subscriptions.last().id
+        }
+    }
+
+    @After fun removeFixture() {
+        composeRule.runOnIdle { SubscriptionStore.remove(fixtureId) }
+    }
 
     @Test
     fun signUpFormKeepsInputAfterRotation() {
@@ -43,8 +62,8 @@ class RotationAndBackNavigationTest {
 
     @Test
     fun subscriptionDetailsStayOpenAfterRotationAndBackReturnsToList() {
-        val name = SubscriptionStore.subscriptions.first().name
-        composeRule.onNodeWithText("Get Started").performClick()
+        val name = requireNotNull(SubscriptionStore.findById(fixtureId)).name
+        composeRule.signInForTest()
         composeRule.onNodeWithText("Subscriptions").performClick()
         composeRule.onNodeWithText(name).performClick()
 
@@ -61,8 +80,8 @@ class RotationAndBackNavigationTest {
 
     @Test
     fun editSaveDialogStaysOpenAfterRotation() {
-        val name = SubscriptionStore.subscriptions.first().name
-        composeRule.onNodeWithText("Get Started").performClick()
+        val name = requireNotNull(SubscriptionStore.findById(fixtureId)).name
+        composeRule.signInForTest()
         composeRule.onNodeWithText("Subscriptions").performClick()
         composeRule.onNodeWithText(name).performClick()
         composeRule.onNodeWithContentDescription("Edit subscription").performClick()
@@ -93,7 +112,7 @@ class RotationAndBackNavigationTest {
 
     @Test
     fun backFromBottomBarTabReturnsToHome() {
-        composeRule.onNodeWithText("Get Started").performClick()
+        composeRule.signInForTest()
         composeRule.onNodeWithText("Profile").performClick()
 
         Espresso.pressBack()

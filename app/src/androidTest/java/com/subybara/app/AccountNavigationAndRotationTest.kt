@@ -35,11 +35,7 @@ class AccountNavigationAndRotationTest {
             }
         }
 
-        // Navigate from Welcome screen to Sign In
-        composeTestRule.onNodeWithText("I already have an account").performClick()
-
-        // Navigate from Sign In to Sign Up
-        composeTestRule.onNodeWithText("Don't have an account? Sign up").performClick()
+        composeTestRule.onNodeWithText("Get Started").performClick()
 
         // Fill out Sign Up form
         composeTestRule.onNodeWithText("Juan").performTextInput("Mary-Jane")
@@ -54,7 +50,11 @@ class AccountNavigationAndRotationTest {
 
         // Success Dialog shown
         composeTestRule.onNodeWithText("Account Created!").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Proceed to Sign In").performClick()
+        composeTestRule.onNodeWithText("Go to Dashboard").performClick()
+
+        composeTestRule.onNodeWithText("Good Morning!").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Profile").performClick()
+        composeTestRule.onNodeWithText("Mary-Jane O'Connor").assertIsDisplayed()
 
         // Verify state saved in AccountStore
         composeTestRule.runOnIdle {

@@ -565,6 +565,21 @@ internal fun logoFor(
         ignoreCase = true
     ) -> R.drawable.logo_adobe
 
+    name.contains(
+        "canva",
+        ignoreCase = true
+    ) -> R.drawable.logo_canva
+
+    name.contains(
+        "google one",
+        ignoreCase = true
+    ) -> R.drawable.logo_google_one
+
+    name.contains(
+        "strava",
+        ignoreCase = true
+    ) -> R.drawable.logo_strava
+
     else -> null
 }
 

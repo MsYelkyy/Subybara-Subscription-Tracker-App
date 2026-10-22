@@ -21,11 +21,20 @@ Subscriptions are entered manually. Subybara only tracks them: it does not proce
 - **Subscription details:** pause, resume, or cancel tracking, and remove a subscription with an **Undo** option.
 - **Dashboard:** estimated monthly and annual cost, active subscription count, upcoming renewals, and spending insights.
 - **Renewals:** upcoming billing dates grouped by month, with search and 7-day, 30-day, and all-upcoming filters. Past billing dates roll forward to the next cycle.
-- **Insights:** estimated bills for the current month and cost by category.
+- **Home and Insights charts:** a shared six-month forecast, displayed as a green line on Home and vertical bars in Insights. Overview, Spending, and Categories tabs show estimated costs and a stacked category breakdown.
 - **Notifications (in-app):** reminders for active subscriptions renewing within 7 days, with an unread indicator on the dashboard bell.
 - **Usability:** the system Back button returns to the previous screen, state survives screen rotation, screens scroll in landscape, and layouts adapt to larger font sizes.
 
 All costs are **estimates** based on each subscription's price, billing cycle, and billing dates. Only active subscriptions are counted.
+
+## MS2 Demo Account
+
+- **Email:** `test@email.com`
+- **Password:** `Test1234!`
+
+Choose **I already have an account** on Welcome to sign in. The demo loads seven sample subscriptions covering weekly, monthly, quarterly, and yearly billing, with upcoming renewals and notification reminders. These are evaluation examples, not current provider price quotes.
+
+New signups start empty. Each email keeps a separate subscription list in memory, including across logout and account switching. Repeat demo logins retain edits and do not duplicate or reseed subscriptions, even if all demo records are deleted. Closing the app process resets accounts and data. Authentication remains simulated; the reserved demo email requires the password above.
 
 ## Technologies Used
 
@@ -109,6 +118,6 @@ To build from the command line:
 
 - **Data is stored in memory only.** Subscriptions and account details reset when the app closes.
 - **Sign in is simulated.** There is no server, and Forgot Password does not send an email.
-- **No payment history.** All costs are estimates, and there is no spending trend chart yet because it needs more than one month of records.
+- **No payment history.** Charts project bills from today through the end of the next five months. The first month includes only remaining bills. Amounts, cycles, renewal dates, and active status are assumed to stay unchanged.
 - **Notifications are in-app only.** There are no push notifications, and read reminders reset when the app closes.
 - At very large font sizes, long subscription names in lists are shortened with "…".

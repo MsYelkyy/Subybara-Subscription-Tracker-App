@@ -1,8 +1,11 @@
 package com.subybara.app.core.data
 
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.subybara.app.core.model.Subscription
-import com.subybara.app.core.model.SubscriptionCategory
 import com.subybara.app.core.model.SubscriptionStatus
 /**
  * Stores and manages temporary subscription data shared across the application.
@@ -12,42 +15,29 @@ import com.subybara.app.core.model.SubscriptionStatus
  */
 object SubscriptionStore {
 
-    private val _subscriptions = mutableStateListOf(
-        Subscription(
-            id = 1,
-            name = "Spotify Premium",
-            amount = 149.00,
-            billingCycle = "Monthly",
-            renewalDate = "October 29, 2026",
-            category = SubscriptionCategory.MUSIC,
-            status = SubscriptionStatus.ACTIVE,
-            paymentMethod = "Credit Card",
-            startDate = "March 29, 2024"
-        ),
-        Subscription(
-            id = 2,
-            name = "Netflix",
-            amount = 549.00,
-            billingCycle = "Monthly",
-            renewalDate = "November 1, 2026",
-            category = SubscriptionCategory.ENTERTAINMENT,
-            status = SubscriptionStatus.ACTIVE,
-            paymentMethod = "GCash",
-            startDate = "January 24, 2023",
-            notes = "All apps plan"
-        ),
-        Subscription(
-            id = 3,
-            name = "YouTube Premium",
-            amount = 159.00,
-            billingCycle = "Monthly",
-            renewalDate = "November 8, 2026",
-            category = SubscriptionCategory.MUSIC,
-            status = SubscriptionStatus.ACTIVE,
-            paymentMethod = "Maya",
-            startDate = "August 8, 2025"
-        )
-    )
+    private val _subscriptions = mutableStateListOf<Subscription>()
+    private val accounts = mutableStateMapOf<String, List<Subscription>>()
+    private var activeAccount by mutableStateOf<String?>(null)
+
+    /** Save the outgoing account and load an isolated list. Seed only once per process. */
+    internal fun openAccount(email: String, initialSubscriptions: () -> List<Subscription> = { emptyList() }) {
+        if (activeAccount == email) return
+        closeAccount()
+        _subscriptions.addAll(accounts.getOrPut(email, initialSubscriptions))
+        activeAccount = email
+    }
+
+    internal fun closeAccount() {
+        activeAccount?.let { accounts[it] = _subscriptions.toList() }
+        _subscriptions.clear()
+        activeAccount = null
+    }
+
+    internal fun resetAccounts() {
+        _subscriptions.clear()
+        accounts.clear()
+        activeAccount = null
+    }
 
     /**
      * Provides read-only access to the current subscriptions.
