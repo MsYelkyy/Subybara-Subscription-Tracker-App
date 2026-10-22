@@ -147,15 +147,6 @@ private fun ReminderRow(
                 color = Neutral500
             )
         }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Icon(
-            painter = painterResource(R.drawable.ic_chevron_right),
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = Color.Unspecified
-        )
     }
 }
 

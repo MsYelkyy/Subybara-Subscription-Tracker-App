@@ -129,7 +129,7 @@ class SubscriptionWorkflowTest {
                 store.add(sample.copy(name = "Workflow Test Record"))
                 testId = store.subscriptions.last().id
             }
-            compose.onNodeWithText("Get Started").performClick()
+            compose.signInForTest()
             compose.onNodeWithText("Subscriptions").performClick()
             compose.onNodeWithText("Workflow Test Record").performScrollTo().performClick()
             compose.onNodeWithText("Pause Subscription").performScrollTo().performClick()
@@ -145,7 +145,8 @@ class SubscriptionWorkflowTest {
             compose.runOnIdle { assertEquals("Edited Workflow Record", store.findById(testId)?.name) }
             compose.onNodeWithText("Remove Subscription").performScrollTo().performClick()
             compose.onAllNodesWithText("Remove Subscription").onLast().performClick()
-            compose.onNodeWithText("My Subscription").assertExists()
+            val expectedHeading = if (store.subscriptions.isEmpty()) "No subscriptions yet" else "My Subscription"
+            compose.onNodeWithText(expectedHeading).assertExists()
             compose.runOnIdle { assertNull(store.findById(testId)) }
         } finally {
             // Remove only the record created by this test.

@@ -35,6 +35,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -49,6 +50,9 @@ import androidx.compose.ui.unit.sp
 import com.subybara.app.R
 import com.subybara.app.core.data.SubscriptionStore
 import com.subybara.app.core.designsystem.component.SubybaraBottomBar
+import com.subybara.app.core.designsystem.component.chart.BillsChartStyle
+import com.subybara.app.core.designsystem.component.chart.ProjectedBillsChart
+import com.subybara.app.core.designsystem.theme.CardBorder
 import com.subybara.app.core.designsystem.theme.Neutral500
 import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.Primary300
@@ -56,22 +60,17 @@ import com.subybara.app.core.designsystem.theme.Primary700
 import com.subybara.app.core.designsystem.theme.Primary900
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
 import com.subybara.app.core.designsystem.theme.White
-import com.subybara.app.core.model.CategorySpend
+import com.subybara.app.core.model.CategoryEstimate
 import com.subybara.app.core.model.Subscription
+import com.subybara.app.core.model.SubscriptionChartData
 import com.subybara.app.core.model.UpcomingRenewal
-import com.subybara.app.core.model.activeSubscriptions
 import com.subybara.app.core.model.formatDate
 import com.subybara.app.core.model.formatSubscriptionAmount
 import com.subybara.app.core.model.renewsInLabel
-import com.subybara.app.core.model.spendByCategory
-import com.subybara.app.core.model.spendDueThisMonth
-import com.subybara.app.core.model.todayInMillis
-import com.subybara.app.core.model.totalAnnualSpend
-import com.subybara.app.core.model.totalMonthlySpend
+import com.subybara.app.core.model.subscriptionChartData
 import com.subybara.app.core.model.upcomingRenewals
 import com.subybara.app.feature.subscriptions.SubscriptionLogo
 import com.subybara.app.navigation.SubybaraDestination
-import kotlin.math.roundToInt
 
 /**
  * Dashboard screen displaying spending metrics, upcoming renewal list,
@@ -86,11 +85,12 @@ fun HomeScreen(
     onViewAllRenewalsClick: () -> Unit = {},
     onSelectSubscription: (Subscription) -> Unit = {},
     onNotificationsClick: () -> Unit = {},
-    hasUnreadNotifications: Boolean = false
+    hasUnreadNotifications: Boolean = false,
+    chartData: SubscriptionChartData = subscriptions.subscriptionChartData()
 ) {
-    val totalMonthlySpend = subscriptions.totalMonthlySpend()
-    val totalAnnualSpend = subscriptions.totalAnnualSpend()
-    val activeCount = subscriptions.activeSubscriptions().size
+    val totalMonthlySpend = chartData.estimatedMonthlyCost
+    val totalAnnualSpend = chartData.estimatedAnnualCost
+    val activeCount = chartData.activeCount
     val upcomingRenewals = subscriptions.upcomingRenewals().take(5)
 
     Scaffold(
@@ -140,7 +140,7 @@ fun HomeScreen(
                 }
             }
 
-            item { SpendingTrendSection() }
+            item { SpendingTrendSection(chartData) }
 
             item {
                 UpcomingRenewalsSection(
@@ -152,8 +152,8 @@ fun HomeScreen(
 
             item {
                 SpendingInsightsSection(
-                    spendThisMonth = subscriptions.spendDueThisMonth(),
-                    topCategory = subscriptions.spendByCategory().firstOrNull(),
+                    spendThisMonth = chartData.months.first().amount,
+                    topCategory = chartData.categories.firstOrNull { it.share > 0 },
                     onViewInsightsClick = { onDestinationClick(SubybaraDestination.Insights) }
                 )
             }
@@ -245,7 +245,7 @@ private fun OverviewMetricsCard(
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "First month tracked",
+                        text = "Cost estimate",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Medium
@@ -305,53 +305,47 @@ private fun OverviewMetricsCard(
 }
 
 @Composable
-private fun SpendingTrendSection() {
+private fun SpendingTrendSection(chartData: SubscriptionChartData) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Spending Trend",
+            text = if (chartData.activeCount == 0) "Spending Trend" else "Projected Monthly Bills",
             modifier = Modifier.semantics { heading() },
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(76.dp)
-                    .background(color = TrendIconBackground, shape = HomeCardShape),
-                contentAlignment = Alignment.Center
+        if (chartData.activeCount == 0) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).testTag("projection-empty"),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_trend_bars),
-                    contentDescription = null
-                )
+                Box(
+                    modifier = Modifier.size(76.dp)
+                        .background(Color(0xFFFFF3D8), HomeCardShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(painterResource(R.drawable.ic_trend_bars), contentDescription = null)
+                }
+                Spacer(Modifier.width(18.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Tracking starts here", style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold, color = Neutral800)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Add your first subscription to see your projected monthly bills.",
+                        style = MaterialTheme.typography.bodySmall, color = Neutral500)
+                }
             }
-
-            Spacer(modifier = Modifier.width(18.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Tracking started in ${formatDate(todayInMillis(), "MMMM")}",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Neutral800
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Your spending trend will appear here once more monthly records become available.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Neutral500
-                )
-            }
+        } else {
+            ProjectedBillsChart(
+                data = chartData,
+                style = BillsChartStyle.Line,
+                modifier = Modifier.fillMaxWidth()
+                    .border(1.dp, CardBorder, RoundedCornerShape(24.dp))
+                    .padding(16.dp)
+            )
         }
     }
 }
@@ -475,11 +469,11 @@ private fun DashboardRenewalRow(
 @Composable
 private fun SpendingInsightsSection(
     spendThisMonth: Double,
-    topCategory: CategorySpend?,
+    topCategory: CategoryEstimate?,
     onViewInsightsClick: () -> Unit
 ) {
     val topCategoryName = topCategory?.category?.label ?: "N/A"
-    val topCategoryPercentage = ((topCategory?.share ?: 0.0) * 100).roundToInt()
+    val topCategoryPercentage = topCategory?.percentage ?: 0
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -502,8 +496,8 @@ private fun SpendingInsightsSection(
         ) {
             InsightMetricRow(
                 iconRes = R.drawable.ic_spending_trend,
-                title = "Estimated bills this month",
-                subtitle = "Based on billing dates",
+                title = "Projected bills this month",
+                subtitle = "Remaining from today",
                 value = formatSubscriptionAmount(spendThisMonth)
             )
 
@@ -620,7 +614,6 @@ private val HomeCardShape = RoundedCornerShape(16.dp)
 private val HomeCardGreenBorder = Primary300.copy(alpha = 0.5f)
 private val OverviewDividerColor = White.copy(alpha = 0.08f)
 private val InsightsFooterBackground = Color(0xFFEBF4DF)
-private val TrendIconBackground = Color(0xFFFFF3D8)
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

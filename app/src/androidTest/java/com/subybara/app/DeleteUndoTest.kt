@@ -45,7 +45,7 @@ class DeleteUndoTest {
         }
 
         try {
-            composeRule.onNodeWithText("Get Started").performClick()
+            composeRule.signInForTest()
             composeRule.onNodeWithText("Subscriptions").performClick()
             composeRule.onNodeWithText("Undo Test Record").performScrollTo().performClick()
             composeRule.onNodeWithText("Remove Subscription").performScrollTo().performClick()

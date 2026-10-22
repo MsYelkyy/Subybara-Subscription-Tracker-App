@@ -1,26 +1,19 @@
 package com.subybara.app.feature.account
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -32,23 +25,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.subybara.app.R
 import com.subybara.app.core.data.AccountStore
 import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
 import com.subybara.app.core.designsystem.component.SubybaraTextAction
-import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
 import com.subybara.app.core.util.AccountValidator
@@ -62,7 +48,16 @@ fun SignInScreen(
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var showErrors by rememberSaveable { mutableStateOf(false) }
+    var signInError by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val trimmedEmail = email.trim()
+    val emailIssue = when {
+        trimmedEmail.isEmpty() -> "Please enter your email address."
+        !AccountValidator.isValidEmail(trimmedEmail) -> "Please enter a valid email address (e.g. name@domain.com)."
+        else -> null
+    }
+    val passwordIssue = "Please enter your password.".takeIf { password.isEmpty() }
 
     Scaffold(
         modifier = modifier
@@ -104,42 +99,30 @@ fun SignInScreen(
 
                 Spacer(modifier = Modifier.height(36.dp))
 
-                errorMessage?.let { message ->
-                    SignInErrorBanner(message = message)
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
-
-                // Email Field
-                AccountFieldLabel("Email")
-                Spacer(Modifier.height(8.dp))
                 AccountTextField(
+                    label = "Email",
                     value = email,
                     onValueChange = {
                         email = it
-                        errorMessage = null
+                        signInError = null
                     },
                     placeholder = "you@example.com",
-                    isError = errorMessage != null,
-                    singleLine = true,
+                    error = emailIssue.takeIf { showErrors },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Password Field
-                AccountFieldLabel("Password")
-                Spacer(Modifier.height(8.dp))
                 AccountTextField(
+                    label = "Password",
                     value = password,
                     onValueChange = {
                         password = it
-                        errorMessage = null
+                        signInError = null
                     },
                     placeholder = "••••••••",
-                    isError = errorMessage != null,
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    visualTransformation = PasswordVisualTransformation()
+                    error = (passwordIssue ?: signInError).takeIf { showErrors },
+                    isPassword = true
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -157,24 +140,14 @@ fun SignInScreen(
                     modifier = Modifier.heightIn(min = 44.dp),
                     shape = RoundedCornerShape(20.dp),
                     onClick = {
-                        val inputEmail = email.trim()
+                        showErrors = true
+                        signInError = null
 
-                        when {
-                            inputEmail.isEmpty() || password.isEmpty() -> {
-                                errorMessage = "Please enter both email and password."
-                            }
-                            !AccountValidator.isValidEmail(inputEmail) -> {
-                                errorMessage = "Please enter a valid email address (e.g. name@domain.com)."
-                            }
-                            else -> {
-                                errorMessage = null
-                                if (AccountStore.currentUser.email != inputEmail) {
-                                    AccountStore.updateUser(
-                                        name = AccountStore.currentUser.name,
-                                        email = inputEmail,
-                                    )
-                                }
+                        if (emailIssue == null && passwordIssue == null) {
+                            if (AccountStore.signIn(trimmedEmail, password)) {
                                 onSignInSuccess()
+                            } else {
+                                signInError = "Incorrect demo password. Please try again."
                             }
                         }
                     }
@@ -192,101 +165,6 @@ fun SignInScreen(
         }
     }
 }
-
-@Composable
-private fun AccountFieldLabel(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge.copy(fontSize = 12.sp, lineHeight = 16.sp),
-        color = Color(0xFF705135)
-    )
-}
-
-@Composable
-private fun SignInErrorBanner(
-    message: String,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(color = SignInErrorBackground, shape = RoundedCornerShape(12.dp))
-            .border(1.dp, SignInErrorBorder, RoundedCornerShape(12.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
-        verticalAlignment = Alignment.Top
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_error),
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = Color.Unspecified
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = SignInErrorRed
-        )
-    }
-}
-
-@Composable
-private fun AccountTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    modifier: Modifier = Modifier,
-    isError: Boolean = false,
-    singleLine: Boolean = true,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    visualTransformation: VisualTransformation = VisualTransformation.None
-) {
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        singleLine = singleLine,
-        keyboardOptions = keyboardOptions,
-        visualTransformation = visualTransformation,
-        textStyle = MaterialTheme.typography.bodyMedium.copy(
-            color = Neutral800
-        ),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .background(
-                color = if (isError) SignInErrorFieldBackground else Color(0xFFFCFDF9),
-                shape = RoundedCornerShape(12.dp)
-            )
-            .border(
-                1.dp,
-                if (isError) SignInErrorRed else Color(0xFFC4D9AA),
-                RoundedCornerShape(12.dp)
-            ),
-        decorationBox = { innerTextField ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                if (value.isEmpty()) {
-                    Text(
-                        text = placeholder,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFD0C7BC)
-                    )
-                }
-                innerTextField()
-            }
-        }
-    )
-}
-
-private val SignInErrorRed = Color(0xFFD4183D)
-private val SignInErrorBackground = Color(0xFFFDE8ED)
-private val SignInErrorBorder = Color(0xFFF4BCC7)
-private val SignInErrorFieldBackground = Color(0xFFFFF3F5)
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

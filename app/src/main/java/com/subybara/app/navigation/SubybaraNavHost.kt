@@ -18,9 +18,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalAccessibilityManager
+import com.subybara.app.core.data.AccountStore
 import com.subybara.app.core.data.SubscriptionStore
 import com.subybara.app.core.model.RenewalReminderDays
 import com.subybara.app.core.model.Subscription
+import com.subybara.app.core.model.subscriptionChartData
 import com.subybara.app.core.model.upcomingRenewals
 import com.subybara.app.feature.account.ForgotPasswordScreen
 import com.subybara.app.feature.account.SignInScreen
@@ -47,6 +49,7 @@ private const val UndoMessageMillis = 5_000L
 @Composable
 fun SubybaraNavHost() {
     var currentRoute by rememberSaveable { mutableStateOf(SubybaraDestination.Welcome.route) }
+    var signUpOrigin by rememberSaveable { mutableStateOf(SubybaraDestination.Welcome.route) }
     var selectedSubscriptionId by rememberSaveable { mutableIntStateOf(0) }
     var addSubscriptionOrigin by rememberSaveable {
         mutableStateOf(SubybaraDestination.Subscriptions.route)
@@ -56,6 +59,7 @@ fun SubybaraNavHost() {
     }
     var seenReminderKeys by rememberSaveable { mutableStateOf(emptyList<String>()) }
 
+    val chartData = SubscriptionStore.subscriptions.subscriptionChartData()
     val reminders = SubscriptionStore.subscriptions.upcomingRenewals(withinDays = RenewalReminderDays)
     val hasUnreadReminders = reminders.any { reminder -> reminder.reminderKey !in seenReminderKeys }
 
@@ -145,7 +149,7 @@ fun SubybaraNavHost() {
         navigator.navigateTo(
             when (destination) {
                 SubybaraDestination.SignIn -> SubybaraDestination.Welcome
-                SubybaraDestination.SignUp -> SubybaraDestination.SignIn
+                SubybaraDestination.SignUp -> SubybaraDestination.fromRoute(signUpOrigin)
                 SubybaraDestination.EditSubscription -> SubybaraDestination.SubscriptionDetails
                 SubybaraDestination.SubscriptionDetails ->
                     SubybaraDestination.fromRoute(subscriptionDetailsOrigin)
@@ -167,18 +171,24 @@ fun SubybaraNavHost() {
     Box(modifier = Modifier.fillMaxSize()) {
         when (destination) {
             SubybaraDestination.Welcome -> WelcomeScreen(
-                onGetStartedClick = { navigator.navigateTo(SubybaraDestination.Home) },
+                onGetStartedClick = {
+                    signUpOrigin = SubybaraDestination.Welcome.route
+                    navigator.navigateTo(SubybaraDestination.SignUp)
+                },
                 onSignInClick = { navigator.navigateTo(SubybaraDestination.SignIn) }
             )
 
             SubybaraDestination.SignIn -> SignInScreen(
                 onSignInSuccess = { navigator.navigateTo(SubybaraDestination.Home) },
                 onForgotPasswordClick = { navigator.navigateTo(SubybaraDestination.ForgotPassword) },
-                onSignUpClick = { navigator.navigateTo(SubybaraDestination.SignUp) }
+                onSignUpClick = {
+                    signUpOrigin = SubybaraDestination.SignIn.route
+                    navigator.navigateTo(SubybaraDestination.SignUp)
+                }
             )
 
             SubybaraDestination.SignUp -> SignUpScreen(
-                onSignUpSuccess = { navigator.navigateTo(SubybaraDestination.SignIn) },
+                onSignUpSuccess = { navigator.navigateTo(SubybaraDestination.Home) },
                 onSignInClick = { navigator.navigateTo(SubybaraDestination.SignIn) }
             )
 
@@ -188,6 +198,7 @@ fun SubybaraNavHost() {
 
             SubybaraDestination.Home -> HomeScreen(
                 subscriptions = SubscriptionStore.subscriptions,
+                chartData = chartData,
                 onDestinationClick = onMainDestinationClick,
                 onAddSubscriptionClick = onAddSubscriptionClick,
                 onViewAllRenewalsClick = { navigator.navigateTo(SubybaraDestination.Renewals) },
@@ -262,7 +273,18 @@ fun SubybaraNavHost() {
             SubybaraDestination.Profile -> ProfileScreen(
                 onDestinationClick = onMainDestinationClick,
                 onAddSubscriptionClick = onAddSubscriptionClick,
-                onSignOutClick = { navigator.navigateTo(SubybaraDestination.Welcome) }
+                onSignOutClick = {
+                    AccountStore.signOut()
+                    feedbackJob?.cancel()
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    selectedSubscriptionId = 0
+                    addSubscriptionOrigin = SubybaraDestination.Subscriptions.route
+                    subscriptionDetailsOrigin = SubybaraDestination.Subscriptions.route
+                    signUpOrigin = SubybaraDestination.Welcome.route
+                    seenReminderKeys = emptyList()
+                    // Navigation replaces one route; no authenticated back stack remains.
+                    navigator.navigateTo(SubybaraDestination.Welcome)
+                }
             )
 
             SubybaraDestination.Renewals -> UpcomingRenewalsScreen(
@@ -279,6 +301,7 @@ fun SubybaraNavHost() {
 
             SubybaraDestination.Insights -> InsightsScreen(
                 subscriptions = SubscriptionStore.subscriptions,
+                chartData = chartData,
                 onDestinationClick = onMainDestinationClick,
                 onAddSubscriptionClick = onAddSubscriptionClick
             )

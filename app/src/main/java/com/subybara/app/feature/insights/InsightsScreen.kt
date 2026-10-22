@@ -19,16 +19,27 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -36,26 +47,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.subybara.app.R
 import com.subybara.app.core.data.SubscriptionStore
 import com.subybara.app.core.designsystem.component.SubybaraBottomBar
 import com.subybara.app.core.designsystem.component.SubybaraCard
+import com.subybara.app.core.designsystem.component.SubybaraFilterChip
+import com.subybara.app.core.designsystem.component.chart.BillsChartStyle
+import com.subybara.app.core.designsystem.component.chart.CategoryStackedBar
+import com.subybara.app.core.designsystem.component.chart.ProjectedBillsChart
+import com.subybara.app.core.designsystem.component.chart.categoryColor
 import com.subybara.app.core.designsystem.theme.CardBorder
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.model.CategoryEstimate
 import com.subybara.app.core.model.Subscription
+import com.subybara.app.core.model.SubscriptionChartData
 import com.subybara.app.core.model.formatSubscriptionAmount
-import com.subybara.app.core.model.spendByCategory
-import com.subybara.app.core.model.spendDueThisMonth
-import com.subybara.app.core.model.totalMonthlySpend
+import com.subybara.app.core.model.subscriptionChartData
 import com.subybara.app.navigation.SubybaraDestination
-
-private val CategoryPalette = listOf(
-    Color(0xFF7E9B63),
-    Color(0xFFD7A44E),
-    Color(0xFFBF683A),
-    Color(0xFF9F7EC1),
-    Color(0xFF89AED0),
-    Color(0xFF8DAA9D)
-)
 
 private val CategoryTrackColor = Color(0xFFF1EDDC)
 
@@ -72,20 +80,10 @@ fun InsightsScreen(
     subscriptions: List<Subscription>,
     modifier: Modifier = Modifier,
     onDestinationClick: (SubybaraDestination) -> Unit = {},
-    onAddSubscriptionClick: () -> Unit = {}
+    onAddSubscriptionClick: () -> Unit = {},
+    chartData: SubscriptionChartData = subscriptions.subscriptionChartData()
 ) {
-    val totalMonthlySpend = subscriptions.totalMonthlySpend()
-    val spendThisMonth = subscriptions.spendDueThisMonth()
-
-    val categorySummaries = subscriptions
-        .spendByCategory()
-        .mapIndexed { index, categorySpend ->
-            Triple(
-                categorySpend.category.label,
-                categorySpend.monthlyAmount,
-                CategoryPalette[index % CategoryPalette.size]
-            )
-        }
+    var selectedTab by rememberSaveable { mutableStateOf("Overview") }
 
     Scaffold(
         modifier = modifier,
@@ -116,24 +114,28 @@ fun InsightsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (categorySummaries.isEmpty()) {
-                EmptyInsightsMessage()
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    item {
-                        MonthlySpendingCard(
-                            totalSpend = spendThisMonth
-                        )
-                    }
-
-                    item {
-                        SpendingByCategoryCard(
-                            categories = categorySummaries,
-                            totalSpend = totalMonthlySpend
-                        )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Overview", "Spending", "Categories").forEach { tab ->
+                    SubybaraFilterChip(
+                        label = tab,
+                        selected = selectedTab == tab,
+                        onClick = { selectedTab = tab },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                if (selectedTab != "Categories") {
+                    item { MonthlySpendingCard(chartData) }
+                }
+                if (selectedTab != "Spending") {
+                    item { SpendingByCategoryCard(chartData.categories) }
+                    chartData.categories.firstOrNull { it.share > 0 }?.let { top ->
+                        item { TopCategoryCard(top) }
                     }
                 }
             }
@@ -142,43 +144,54 @@ fun InsightsScreen(
 }
 
 @Composable
-private fun MonthlySpendingCard(
-    totalSpend: Double
-) {
+private fun MonthlySpendingCard(chartData: SubscriptionChartData) {
+    var periodMenuOpen by rememberSaveable { mutableStateOf(false) }
     SubybaraCard(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = "ESTIMATED BILLS THIS MONTH",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = formatSubscriptionAmount(totalSpend),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "Based on billing dates. Payments aren't tracked.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.secondaryContainer)
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = "First month tracked",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    fontWeight = FontWeight.Medium
-                )
+            Text("Estimated Monthly Cost", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(formatSubscriptionAmount(chartData.estimatedMonthlyCost),
+                style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Projected Monthly Bills", modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelLarge)
+                Box {
+                    TextButton(onClick = { periodMenuOpen = true }, modifier = Modifier
+                        .height(28.dp).background(CategoryTrackColor, RoundedCornerShape(20.dp)),
+                        contentPadding = PaddingValues(horizontal = 10.dp)) {
+                        Text("Next 6 Months", style = MaterialTheme.typography.labelSmall)
+                        Icon(painterResource(R.drawable.ic_chevron_down), contentDescription = null,
+                            modifier = Modifier.size(14.dp))
+                    }
+                    DropdownMenu(expanded = periodMenuOpen, onDismissRequest = { periodMenuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text("${chartData.months.first().fullLabel} – ${chartData.months.last().fullLabel}") },
+                            onClick = { periodMenuOpen = false }
+                        )
+                    }
+                }
+            }
+            ProjectedBillsChart(data = chartData, style = BillsChartStyle.Bar)
+        }
+    }
+}
+
+@Composable
+private fun TopCategoryCard(top: CategoryEstimate) {
+    Surface(shape = RoundedCornerShape(20.dp), color = CategoryTrackColor,
+        modifier = Modifier.fillMaxWidth().testTag("top-category")) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.size(40.dp).background(categoryColor(top.category), RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center) {
+                Text("★", color = Color.White, fontSize = 24.sp)
+            }
+            Column {
+                Text("Top: ${top.category.label}", style = MaterialTheme.typography.labelLarge)
+                Text("${top.percentage}% of estimated monthly cost", style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -186,8 +199,7 @@ private fun MonthlySpendingCard(
 
 @Composable
 private fun SpendingByCategoryCard(
-    categories: List<Triple<String, Double, Color>>,
-    totalSpend: Double
+    categories: List<CategoryEstimate>
 ) {
     SubybaraCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -195,22 +207,27 @@ private fun SpendingByCategoryCard(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Spending by Category",
+                text = "Estimated Spending by Category",
                 modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            SegmentedCategoryBar(categories = categories, totalSpend = totalSpend)
+            if (categories.isEmpty()) {
+                Text("No active subscriptions to analyze yet.", modifier = Modifier.testTag("category-empty"))
+            } else if (categories.none { it.share > 0 }) {
+                Text("No estimated monthly cost yet.")
+            }
+            CategoryStackedBar(categories)
 
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                categories.forEach { (categoryName, _, color) ->
-                    CategoryLegendTag(label = categoryName, color = color)
+                categories.forEach { category ->
+                    CategoryLegendTag(label = category.category.label, color = categoryColor(category.category))
                 }
             }
 
@@ -218,40 +235,13 @@ private fun SpendingByCategoryCard(
 
             // Category progress rows nested directly inside the card surface
             Column {
-                categories.forEachIndexed { index, (categoryName, totalAmount, color) ->
+                categories.forEachIndexed { index, category ->
                     CategoryProgressRow(
-                        categoryName = categoryName,
-                        totalAmount = totalAmount,
-                        color = color,
-                        totalSpend = totalSpend,
+                        category = category,
                         isLast = index == categories.lastIndex
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun SegmentedCategoryBar(
-    categories: List<Triple<String, Double, Color>>,
-    totalSpend: Double
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(20.dp)
-            .clip(RoundedCornerShape(10.dp)),
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        categories.forEach { (_, amount, color) ->
-            val weight = if (totalSpend > 0) (amount / totalSpend).toFloat() else 1f
-            Box(
-                modifier = Modifier
-                    .weight(weight.coerceAtLeast(0.01f))
-                    .fillMaxHeight()
-                    .background(color)
-            )
         }
     }
 }
@@ -281,14 +271,12 @@ private fun CategoryLegendTag(
 
 @Composable
 private fun CategoryProgressRow(
-    categoryName: String,
-    totalAmount: Double,
-    color: Color,
-    totalSpend: Double,
+    category: CategoryEstimate,
     isLast: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val progress = if (totalSpend > 0) (totalAmount / totalSpend).toFloat() else 0f
+    val progress = category.share.toFloat()
+    val color = categoryColor(category.category)
 
     Row(
         modifier = modifier
@@ -333,7 +321,7 @@ private fun CategoryProgressRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = categoryName,
+                    text = "${category.category.label} · ${category.percentage}%",
                     modifier = Modifier
                         .weight(1f)
                         .padding(end = 8.dp),
@@ -342,7 +330,7 @@ private fun CategoryProgressRow(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = formatSubscriptionAmount(totalAmount),
+                    text = formatSubscriptionAmount(category.monthlyAmount),
                     style = MaterialTheme.typography.bodyMedium,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -361,20 +349,6 @@ private fun CategoryProgressRow(
                 drawStopIndicator = {}
             )
         }
-    }
-}
-
-@Composable
-private fun EmptyInsightsMessage() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "No active subscriptions to analyze yet.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 

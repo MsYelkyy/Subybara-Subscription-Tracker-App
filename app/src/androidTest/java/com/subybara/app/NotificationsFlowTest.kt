@@ -34,7 +34,7 @@ class NotificationsFlowTest {
         composeRule.runOnIdle { testId = addReminderRecord("Reminder Test Record", daysAhead = 2) }
 
         try {
-            composeRule.onNodeWithText("Get Started").performClick()
+            composeRule.signInForTest()
             composeRule.onNodeWithContentDescription("Notifications, new renewal reminders").performClick()
 
             composeRule.onNodeWithText("Reminder Test Record renews in 2 days")
@@ -62,7 +62,7 @@ class NotificationsFlowTest {
         composeRule.runOnIdle { testId = addReminderRecord("Status Reminder Record", daysAhead = 2) }
 
         try {
-            composeRule.onNodeWithText("Get Started").performClick()
+            composeRule.signInForTest()
             openNotifications()
             composeRule.onNodeWithText("Status Reminder Record renews in 2 days")
                 .performScrollTo()
@@ -105,7 +105,7 @@ class NotificationsFlowTest {
         composeRule.runOnIdle { testId = addReminderRecord("Edit Reminder Record", daysAhead = 20) }
 
         try {
-            composeRule.onNodeWithText("Get Started").performClick()
+            composeRule.signInForTest()
             openNotifications()
             composeRule.onNodeWithText("Edit Reminder Record", substring = true).assertDoesNotExist()
 
