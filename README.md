@@ -1,8 +1,18 @@
 # Subybara
 
-Subybara is an Android subscription tracker built for our Mobile Development course. It helps users keep track of their subscriptions, estimated costs, and upcoming billing dates in one place.
+**Subscription Tracker | MO-IT114 Mobile Development Fundamentals**
 
-Subscriptions are entered manually. Subybara only tracks them: it does not process payments or cancel subscriptions with service providers.
+Subybara is an Android subscription tracker that helps users manage subscriptions, monitor upcoming renewals, and view estimated subscription costs in one place.
+
+Subscriptions are entered manually. The app does not process payments or cancel subscriptions directly with service providers.
+
+## Group Members
+
+**Group 2 – H3101**
+
+- Joyce Mariel Poblete
+- Alexaire Raymundo
+- Harty Joy Villegas
 
 ## Screenshots
 
