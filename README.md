@@ -8,7 +8,7 @@ Subscriptions are entered manually. The app does not process payments or cancel 
 
 ## Group Members
 
-**Group 2 – H3101**
+**Group 1 – H3101**
 
 - Joyce Mariel Poblete
 - Alexaire Raymundo
