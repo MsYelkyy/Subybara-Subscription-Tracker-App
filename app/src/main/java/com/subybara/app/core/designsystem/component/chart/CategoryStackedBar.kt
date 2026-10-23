@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.subybara.app.core.designsystem.theme.WarmBeige
 import com.subybara.app.core.model.CategoryEstimate
 import com.subybara.app.core.model.SubscriptionCategory
 
@@ -36,7 +37,7 @@ fun CategoryStackedBar(categories: List<CategoryEstimate>, modifier: Modifier = 
         .testTag("category-stacked-bar").semantics {
             contentDescription = categories.joinToString("; ") { "${it.category.label}: ${it.percentage}%" }
         }) {
-        drawRect(Color(0xFFF1EDDC))
+        drawRect(WarmBeige)
         var x = 0f
         categories.filter { it.share > 0 }.forEachIndexed { index, category ->
             val width = size.width * category.share.toFloat()

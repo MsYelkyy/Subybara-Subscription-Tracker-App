@@ -5,10 +5,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,7 +32,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.heading
@@ -45,6 +44,8 @@ import androidx.compose.ui.unit.sp
 import com.subybara.app.R
 import com.subybara.app.core.data.AccountStore
 import com.subybara.app.core.designsystem.component.SubybaraBottomBar
+import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
+import com.subybara.app.core.designsystem.theme.AlertRed
 import com.subybara.app.core.designsystem.theme.CardBorder
 import com.subybara.app.core.designsystem.theme.Neutral100
 import com.subybara.app.core.designsystem.theme.Neutral500
@@ -107,13 +108,7 @@ fun ProfileScreen(
             )
 
             // User Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
-                border = BorderStroke(1.dp, CardBorder),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
+            ProfileSectionCard {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -157,22 +152,9 @@ fun ProfileScreen(
             }
 
             // Preferences Section
-            Text(
-                text = "Preferences",
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
-                ),
-                color = Neutral800
-            )
+            ProfileSectionTitle(text = "Preferences")
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
-                border = BorderStroke(1.dp, CardBorder),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
+            ProfileSectionCard {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -210,22 +192,9 @@ fun ProfileScreen(
             }
 
             // App Section
-            Text(
-                text = "App",
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
-                ),
-                color = Neutral800
-            )
+            ProfileSectionTitle(text = "App")
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = White),
-                border = BorderStroke(1.dp, CardBorder),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
+            ProfileSectionCard {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -242,26 +211,40 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             // Log out Button
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-                    .background(color = Color(0xFFAC121B), shape = RoundedCornerShape(20.dp))
-                    .border(width = 1.dp, color = Color(0xFFAC121B), shape = RoundedCornerShape(20.dp))
-                    .clickable(onClick = onSignOutClick),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Log out",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp
-                    ),
-                    color = White
-                )
-            }
+            SubybaraPrimaryButton(
+                text = "Log out",
+                onClick = onSignOutClick,
+                modifier = Modifier.height(44.dp),
+                shape = RoundedCornerShape(20.dp),
+                containerColor = AlertRed,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
+}
+
+@Composable
+private fun ProfileSectionTitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall.copy(
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp
+        ),
+        color = Neutral800
+    )
+}
+
+@Composable
+private fun ProfileSectionCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = White),
+        border = BorderStroke(1.dp, CardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        content = content
+    )
 }
 
 @Composable

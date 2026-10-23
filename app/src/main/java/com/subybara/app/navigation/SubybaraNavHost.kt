@@ -324,7 +324,6 @@ fun SubybaraNavHost() {
             )
 
             SubybaraDestination.Insights -> InsightsScreen(
-                subscriptions = SubscriptionStore.subscriptions,
                 chartData = chartData,
                 onDestinationClick = onMainDestinationClick,
                 onAddSubscriptionClick = onAddSubscriptionClick

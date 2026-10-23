@@ -22,10 +22,10 @@ import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.White
 
 /**
- * Main filled action button used for primary actions.
+ * Reusable button for primary actions.
  *
- * [containerColor] is green by default; pass a different color for
- * destructive actions such as deleting.
+ * Uses green and SemiBold text by default.
+ * The color and font weight can be customized to match different actions and designs.
  */
 @Composable
 fun SubybaraPrimaryButton(
@@ -34,7 +34,8 @@ fun SubybaraPrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     shape: Shape = RoundedCornerShape(15.dp),
-    containerColor: Color = Primary600
+    containerColor: Color = Primary600,
+    fontWeight: FontWeight = FontWeight.SemiBold
 ) {
     Button(
         onClick = onClick,
@@ -55,7 +56,7 @@ fun SubybaraPrimaryButton(
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = fontWeight
         )
     }
 }

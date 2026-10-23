@@ -94,6 +94,7 @@ import com.subybara.app.core.designsystem.theme.Primary300
 import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.Secondary200
 import com.subybara.app.core.designsystem.theme.Secondary300
+import com.subybara.app.core.designsystem.theme.WarmBrown
 import com.subybara.app.core.designsystem.theme.White
 import com.subybara.app.core.model.Subscription
 import com.subybara.app.core.model.SubscriptionCategory
@@ -601,7 +602,7 @@ private fun FormFieldCard(
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Medium
                     ),
-                    color = SubscriptionBrown
+                    color = WarmBrown
                 )
 
                 Spacer(modifier = Modifier.height(labelSpacing))

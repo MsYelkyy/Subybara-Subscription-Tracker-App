@@ -46,12 +46,14 @@ import androidx.compose.ui.unit.sp
 import com.subybara.app.R
 import com.subybara.app.core.data.SubscriptionStore
 import com.subybara.app.core.designsystem.component.SubybaraCard
+import com.subybara.app.core.designsystem.theme.AlertRed
 import com.subybara.app.core.designsystem.theme.Neutral500
 import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.Primary800
 import com.subybara.app.core.designsystem.theme.Primary900
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.designsystem.theme.WarmBeige
 import com.subybara.app.core.designsystem.theme.White
 import com.subybara.app.core.model.Subscription
 import com.subybara.app.core.model.SubscriptionStatus
@@ -60,8 +62,6 @@ import com.subybara.app.core.model.formatDate
 import com.subybara.app.core.model.formatSubscriptionAmount
 import com.subybara.app.core.model.nextBillingDate
 import com.subybara.app.core.model.reformatDate
-
-private val SubscriptionDetailsDivider = Color(0xFFF1EDDC)
 
 private val RemoveSubscriptionBorder = Color(0xFFEEC5BF)
 
@@ -267,7 +267,7 @@ fun SubscriptionDetailsScreen(
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp),
                         border = BorderStroke(0.76.dp, RemoveSubscriptionBorder),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = SubscriptionRed
+                            contentColor = AlertRed
                         )
                     ) {
                         ActionContent(icon = R.drawable.ic_delete, text = "Remove Subscription")
@@ -459,7 +459,7 @@ private fun SubscriptionDetailsCard(details: List<Pair<String, String>>) {
                 if (index < details.lastIndex) {
                     HorizontalDivider(
                         thickness = 0.76.dp,
-                        color = SubscriptionDetailsDivider
+                        color = WarmBeige
                     )
                 }
             }

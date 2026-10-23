@@ -44,9 +44,9 @@ import androidx.compose.ui.unit.sp
 import com.subybara.app.R
 import com.subybara.app.core.designsystem.theme.GeologicaFontFamily
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.designsystem.theme.WarmBrown
 
-private val WarmBrown = Color(0xFF6A4C32)
-private val WarmBrownPlaceholder = Color(0x806A4C32)
+private val WarmBrownPlaceholder = WarmBrown.copy(alpha = 0.5f)
 private val InputBorderColor = Color(0xFFC8D8B0)
 private val InputBackgroundColor = Color(0xCCFFFFFF)
 

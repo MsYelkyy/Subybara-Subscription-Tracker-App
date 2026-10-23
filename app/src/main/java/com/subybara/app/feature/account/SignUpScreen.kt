@@ -25,7 +25,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
@@ -48,10 +47,10 @@ import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.OffWhite
 import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.designsystem.theme.WarmBrown
 import com.subybara.app.core.util.AccountValidator
 
-private val WarmBrown = Color(0xFF6A4C32)
-private val WarmBrownSubtle = Color(0x8C6A4C32)
+private val WarmBrownSubtle = WarmBrown.copy(alpha = 0.55f)
 
 /**
  * Sign Up screen allowing new users to register an account matching Figma specifications.
@@ -216,51 +215,39 @@ fun SignUpScreen(
                     lineHeight = 18.sp,
                     textAlign = TextAlign.Center
                 ),
-                color = Color(0x996A4C32),
+                color = WarmBrown.copy(alpha = 0.6f),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
             )
 
             // Sign Up Button
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-                    .background(color = Primary600, shape = RoundedCornerShape(20.dp))
-                    .clickable {
-                        showErrors = true
-                        emailTakenError = null
-                        val issues = listOf(
-                            firstNameIssue,
-                            lastNameIssue,
-                            emailIssue,
-                            passwordIssue,
-                            confirmPasswordIssue
-                        )
+            SubybaraPrimaryButton(
+                text = "Sign Up",
+                modifier = Modifier.height(44.dp),
+                shape = RoundedCornerShape(20.dp),
+                fontWeight = FontWeight.Medium,
+                onClick = {
+                    showErrors = true
+                    emailTakenError = null
+                    val issues = listOf(
+                        firstNameIssue,
+                        lastNameIssue,
+                        emailIssue,
+                        passwordIssue,
+                        confirmPasswordIssue
+                    )
 
-                        if (issues.all { it == null }) {
-                            val fullName = "$trimmedFirstName $trimmedLastName".trim()
-                            if (AccountStore.register(fullName, trimmedEmail)) {
-                                showSuccessDialog = true
-                            } else {
-                                emailTakenError = "This email already has an account. Please sign in."
-                            }
+                    if (issues.all { it == null }) {
+                        val fullName = "$trimmedFirstName $trimmedLastName".trim()
+                        if (AccountStore.register(fullName, trimmedEmail)) {
+                            showSuccessDialog = true
+                        } else {
+                            emailTakenError = "This email already has an account. Please sign in."
                         }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Sign Up",
-                    style = TextStyle(
-                        fontFamily = GeologicaFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
-                        lineHeight = 21.sp
-                    ),
-                    color = Color.White
-                )
-            }
+                    }
+                }
+            )
 
             // Already have an account? Log in Link
             Box(
@@ -289,7 +276,7 @@ fun SignUpScreen(
                         lineHeight = 21.sp,
                         textAlign = TextAlign.Center
                     ),
-                    color = Color(0xB36A4C32),
+                    color = WarmBrown.copy(alpha = 0.7f),
                     modifier = Modifier.clickable(onClick = onSignInClick)
                 )
             }

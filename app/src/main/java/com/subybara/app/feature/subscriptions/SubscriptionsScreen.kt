@@ -76,6 +76,7 @@ import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.Primary200
 import com.subybara.app.core.designsystem.theme.Primary900
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.designsystem.theme.WarmBrown
 import com.subybara.app.core.model.Subscription
 import com.subybara.app.core.model.SubscriptionStatus
 import com.subybara.app.core.model.formatDate
@@ -286,7 +287,7 @@ private fun EmptySubscriptionsState(
                     fontSize = 16.sp,
                     lineHeight = 20.sp
                 ),
-                color = SubscriptionBrown,
+                color = WarmBrown,
                 textAlign = TextAlign.Center
             )
 

@@ -54,4 +54,6 @@ val Neutral900 = Color(0xFF121619)
 val Neutral950 = Color(0xFF0D1012)
 
 //additional
-val SearchFieldBackground = Color(0xFFF2F5ED)
+val WarmBrown = Color(0xFF6A4C32)
+val WarmBeige = Color(0xFFF1EDDC)
+val AlertRed = Color(0xFFAC121B)

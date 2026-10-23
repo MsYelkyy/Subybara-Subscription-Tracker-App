@@ -52,18 +52,15 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.subybara.app.R
 import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
+import com.subybara.app.core.designsystem.theme.AlertRed
 import com.subybara.app.core.designsystem.theme.CardBorder
 import com.subybara.app.core.designsystem.theme.Neutral600
 import com.subybara.app.core.designsystem.theme.Neutral700
 import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.designsystem.theme.WarmBrown
 import com.subybara.app.core.designsystem.theme.White
-
-
-// Shared subscription colors from the design.
-internal val SubscriptionBrown = Color(0xFF6A4C32)
-internal val SubscriptionRed = Color(0xFFAC121B)
 
 private val DialogShape = RoundedCornerShape(28.dp)
 private val WideButtonShape = RoundedCornerShape(20.dp)
@@ -259,7 +256,7 @@ fun DeleteSubscriptionDialog(
                 fontSize = 13.sp,
                 lineHeight = 16.sp
             ),
-            color = SubscriptionBrown,
+            color = WarmBrown,
             textAlign = TextAlign.Center
         )
 
@@ -272,7 +269,7 @@ fun DeleteSubscriptionDialog(
                 onClick = onDeleteClick,
                 modifier = Modifier.heightIn(min = 48.dp),
                 shape = WideButtonShape,
-                containerColor = SubscriptionRed
+                containerColor = AlertRed
             )
 
             DialogSecondaryButton(

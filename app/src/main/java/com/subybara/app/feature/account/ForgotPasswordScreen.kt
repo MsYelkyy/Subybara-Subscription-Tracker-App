@@ -1,8 +1,10 @@
 package com.subybara.app.feature.account
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +44,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subybara.app.R
@@ -49,6 +52,7 @@ import com.subybara.app.core.designsystem.component.SubybaraPrimaryButton
 import com.subybara.app.core.designsystem.theme.Neutral500
 import com.subybara.app.core.designsystem.theme.Neutral800
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.designsystem.theme.Tertiary600
 import com.subybara.app.core.util.AccountValidator
 
 /**
@@ -101,119 +105,102 @@ fun ForgotPasswordScreen(
                     )
                 }
                 Spacer(Modifier.height(8.dp))
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color.White,
-                    shadowElevation = 8.dp
+                ResetCard(
+                    iconRes = R.drawable.ic_password_cursor,
+                    iconPadding = 7.dp,
+                    iconSize = 32.dp
                 ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFFFFEDAA),
-                            shadowElevation = 3.dp
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_password_cursor),
-                                contentDescription = null,
-                                tint = Color(0xFFFD8E00),
-                                modifier = Modifier.padding(7.dp).size(32.dp)
+                    Text(
+                        text = "Forgotten your password?",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics { heading() },
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 20.sp,
+                            lineHeight = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = Neutral800,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "There is nothing to worry about, we'll send you a message to help you reset your password.",
+                        style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+                        color = Neutral500,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    BasicTextField(
+                        value = email,
+                        onValueChange = {
+                            email = it
+                            errorMessage = null
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            color = Neutral800
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .background(
+                                color = Color.White,
+                                shape = RoundedCornerShape(12.dp)
                             )
-                        }
-                        Spacer(Modifier.height(24.dp))
-                        Text(
-                            text = "Forgotten your password?",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .semantics { heading() },
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontSize = 20.sp,
-                                lineHeight = 24.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = Neutral800,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = "There is nothing to worry about, we'll send you a message to help you reset your password.",
-                            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
-                            color = Neutral500,
-                            textAlign = TextAlign.Start
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        BasicTextField(
-                            value = email,
-                            onValueChange = {
-                                email = it
-                                errorMessage = null
-                            },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            textStyle = MaterialTheme.typography.bodyMedium.copy(
-                                color = Neutral800
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
-                                .background(
-                                    color = Color.White,
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                                .border(1.dp, Color(0xFFC4D9AA), RoundedCornerShape(12.dp)),
-                            decorationBox = { innerTextField ->
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 16.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    if (email.isEmpty()) {
-                                        Text(
-                                            text = "Email address",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = Color(0xFF4D5358)
-                                        )
-                                    }
-                                    innerTextField()
-                                }
-                            }
-                        )
-
-                        if (errorMessage != null) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = errorMessage!!,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                                textAlign = TextAlign.Start,
+                            .border(1.dp, Color(0xFFC4D9AA), RoundedCornerShape(12.dp)),
+                        decorationBox = { innerTextField ->
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .semantics { liveRegion = LiveRegionMode.Polite }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        SubybaraPrimaryButton(
-                            text = "Send Reset Link",
-                            modifier = Modifier.heightIn(min = 44.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            onClick = {
-                                if (!AccountValidator.isValidEmail(email)) {
-                                    errorMessage = "Please enter a valid email address."
-                                } else {
-                                    keyboardController?.hide()
-                                    isSubmitted = true
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (email.isEmpty()) {
+                                    Text(
+                                        text = "Email address",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFF4D5358)
+                                    )
                                 }
+                                innerTextField()
                             }
-                        )
+                        }
+                    )
 
+                    if (errorMessage != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = errorMessage!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics { liveRegion = LiveRegionMode.Polite }
+                        )
                     }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    SubybaraPrimaryButton(
+                        text = "Send Reset Link",
+                        modifier = Modifier.heightIn(min = 44.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        onClick = {
+                            if (!AccountValidator.isValidEmail(email)) {
+                                errorMessage = "Please enter a valid email address."
+                            } else {
+                                keyboardController?.hide()
+                                isSubmitted = true
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -237,58 +224,74 @@ private fun ResetConfirmation(
             .padding(horizontal = 16.dp)
             .padding(top = 40.dp, bottom = 24.dp)
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            color = Color.White,
-            shadowElevation = 8.dp
+        ResetCard(
+            iconRes = R.drawable.ic_reset_mail,
+            iconPadding = 8.dp,
+            iconSize = 34.dp
         ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFFFEDAA),
-                    shadowElevation = 3.dp
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_reset_mail),
-                        contentDescription = null,
-                        tint = Color(0xFFFD8E00),
-                        modifier = Modifier.padding(8.dp).size(34.dp)
-                    )
-                }
-                Spacer(Modifier.height(24.dp))
-                Text(
-                    text = "Check your email",
-                    modifier = Modifier.semantics { heading() },
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Neutral800
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "We have sent the password reset link to your email",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 16.sp,
-                        lineHeight = 22.sp
-                    ),
-                    color = Neutral500
-                )
-                Text(
-                    text = "[$email]",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 16.sp,
-                        lineHeight = 22.sp
-                    ),
-                    fontWeight = FontWeight.Bold,
-                    color = Neutral500
-                )
-                Spacer(Modifier.height(24.dp))
-                SubybaraPrimaryButton(
-                    text = "Return to login",
-                    onClick = onBackToSignIn,
-                    modifier = Modifier.heightIn(min = 44.dp),
-                    shape = RoundedCornerShape(24.dp)
+            Text(
+                text = "Check your email",
+                modifier = Modifier.semantics { heading() },
+                style = MaterialTheme.typography.titleLarge,
+                color = Neutral800
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "We have sent the password reset link to your email",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 16.sp,
+                    lineHeight = 22.sp
+                ),
+                color = Neutral500
+            )
+            Text(
+                text = "[$email]",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 16.sp,
+                    lineHeight = 22.sp
+                ),
+                fontWeight = FontWeight.Bold,
+                color = Neutral500
+            )
+            Spacer(Modifier.height(24.dp))
+            SubybaraPrimaryButton(
+                text = "Return to login",
+                onClick = onBackToSignIn,
+                modifier = Modifier.heightIn(min = 44.dp),
+                shape = RoundedCornerShape(24.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ResetCard(
+    @DrawableRes iconRes: Int,
+    iconPadding: Dp,
+    iconSize: Dp,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White,
+        shadowElevation = 8.dp
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFFFEDAA),
+                shadowElevation = 3.dp
+            ) {
+                Icon(
+                    painter = painterResource(iconRes),
+                    contentDescription = null,
+                    tint = Tertiary600,
+                    modifier = Modifier.padding(iconPadding).size(iconSize)
                 )
             }
+            Spacer(Modifier.height(24.dp))
+            content()
         }
     }
 }

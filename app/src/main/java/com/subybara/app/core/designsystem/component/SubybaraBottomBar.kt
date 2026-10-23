@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.subybara.app.R
 import com.subybara.app.core.designsystem.theme.OffWhite
-import com.subybara.app.core.designsystem.theme.Primary200
 import com.subybara.app.core.designsystem.theme.Primary250
 import com.subybara.app.core.designsystem.theme.Primary600
 import com.subybara.app.core.designsystem.theme.Primary900

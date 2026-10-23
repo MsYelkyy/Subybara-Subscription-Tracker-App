@@ -15,6 +15,10 @@ import com.subybara.app.core.model.UserAccount
 object AccountStore {
     const val DemoEmail = "test@email.com"
     const val DemoPassword = "Test1234!"
+    private val DefaultUser = UserAccount(
+        name = "Manuel Garcia",
+        email = "capyfriend@email.com",
+    )
     private val users = mutableStateMapOf<String, UserAccount>()
     private fun accountKey(email: String) = email.trim().lowercase(java.util.Locale.ROOT)
 
@@ -39,18 +43,13 @@ object AccountStore {
 
     fun signOut() {
         SubscriptionStore.closeAccount()
-        currentUser = UserAccount("Manuel Garcia", "capyfriend@email.com")
+        currentUser = DefaultUser
     }
 
     /**
      * Holds the active user account state.
      */
-    var currentUser by mutableStateOf(
-        UserAccount(
-            name = "Manuel Garcia",
-            email = "capyfriend@email.com",
-        )
-    )
+    var currentUser by mutableStateOf(DefaultUser)
         private set
 
     /**
@@ -69,9 +68,6 @@ object AccountStore {
     fun reset() {
         users.clear()
         SubscriptionStore.resetAccounts()
-        currentUser = UserAccount(
-            name = "Manuel Garcia",
-            email = "capyfriend@email.com",
-        )
+        currentUser = DefaultUser
     }
 }

@@ -58,30 +58,27 @@ import com.subybara.app.core.designsystem.component.chart.ProjectedBillsChart
 import com.subybara.app.core.designsystem.component.chart.categoryColor
 import com.subybara.app.core.designsystem.theme.CardBorder
 import com.subybara.app.core.designsystem.theme.SubybaraTheme
+import com.subybara.app.core.designsystem.theme.WarmBeige
 import com.subybara.app.core.model.CategoryEstimate
-import com.subybara.app.core.model.Subscription
 import com.subybara.app.core.model.SubscriptionChartData
 import com.subybara.app.core.model.formatSubscriptionAmount
 import com.subybara.app.core.model.subscriptionChartData
 import com.subybara.app.navigation.SubybaraDestination
 
-private val CategoryTrackColor = Color(0xFFF1EDDC)
-
 /**
  * Insights screen displaying subscription spending summaries and nested category breakdowns.
  *
- * @param subscriptions List of user subscriptions, usually [SubscriptionStore.subscriptions].
+ * @param chartData Shared forecast, the same one Home shows.
  * @param modifier Applied to root layout.
  * @param onDestinationClick Callback for bottom bar navigation taps.
  * @param onAddSubscriptionClick Callback for center add button tap.
  */
 @Composable
 fun InsightsScreen(
-    subscriptions: List<Subscription>,
+    chartData: SubscriptionChartData,
     modifier: Modifier = Modifier,
     onDestinationClick: (SubybaraDestination) -> Unit = {},
-    onAddSubscriptionClick: () -> Unit = {},
-    chartData: SubscriptionChartData = subscriptions.subscriptionChartData()
+    onAddSubscriptionClick: () -> Unit = {}
 ) {
     var selectedTab by rememberSaveable { mutableStateOf("Overview") }
 
@@ -160,7 +157,7 @@ private fun MonthlySpendingCard(chartData: SubscriptionChartData) {
                     style = MaterialTheme.typography.labelLarge)
                 Box {
                     TextButton(onClick = { periodMenuOpen = true }, modifier = Modifier
-                        .height(28.dp).background(CategoryTrackColor, RoundedCornerShape(20.dp)),
+                        .height(28.dp).background(WarmBeige, RoundedCornerShape(20.dp)),
                         contentPadding = PaddingValues(horizontal = 10.dp)) {
                         Text("Next 6 Months", style = MaterialTheme.typography.labelSmall)
                         Icon(painterResource(R.drawable.ic_chevron_down), contentDescription = null,
@@ -181,7 +178,7 @@ private fun MonthlySpendingCard(chartData: SubscriptionChartData) {
 
 @Composable
 private fun TopCategoryCard(top: CategoryEstimate) {
-    Surface(shape = RoundedCornerShape(20.dp), color = CategoryTrackColor,
+    Surface(shape = RoundedCornerShape(20.dp), color = WarmBeige,
         modifier = Modifier.fillMaxWidth().testTag("top-category")) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -302,7 +299,7 @@ private fun CategoryProgressRow(
                         .padding(top = 2.dp, bottom = 4.dp)
                         .width(2.dp)
                         .weight(1f)
-                        .background(CategoryTrackColor)
+                        .background(WarmBeige)
                 )
             }
         }
@@ -344,7 +341,7 @@ private fun CategoryProgressRow(
                     .fillMaxWidth()
                     .height(4.dp),
                 color = color,
-                trackColor = CategoryTrackColor,
+                trackColor = WarmBeige,
                 gapSize = 0.dp,
                 drawStopIndicator = {}
             )
@@ -357,7 +354,7 @@ private fun CategoryProgressRow(
 private fun InsightsScreenPreview() {
     SubybaraTheme {
         InsightsScreen(
-            subscriptions = SubscriptionStore.subscriptions
+            chartData = SubscriptionStore.subscriptions.subscriptionChartData()
         )
     }
 }
