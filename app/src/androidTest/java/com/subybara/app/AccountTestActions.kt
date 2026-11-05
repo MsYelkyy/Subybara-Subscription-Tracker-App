@@ -12,6 +12,11 @@ import androidx.test.espresso.Espresso
 fun ComposeContentTestRule.signInForTest() {
     // Existing workflow tests stage their fixtures before opening the account.
     val fixtures = com.subybara.app.core.data.SubscriptionStore.subscriptions.toList()
+    // Sign In only accepts registered accounts, so create the test account first.
+    runOnIdle {
+        com.subybara.app.core.data.AccountStore.register("Test User", "test@subybara.com", "secure123")
+        com.subybara.app.core.data.AccountStore.signOut()
+    }
     onNodeWithText("I already have an account").performClick()
     onAllNodes(hasSetTextAction())[0].performTextInput("test@subybara.com")
     onAllNodes(hasSetTextAction())[1].performTextInput("secure123")

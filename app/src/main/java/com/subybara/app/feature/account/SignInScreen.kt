@@ -147,7 +147,7 @@ fun SignInScreen(
                             if (AccountStore.signIn(trimmedEmail, password)) {
                                 onSignInSuccess()
                             } else {
-                                signInError = "Incorrect demo password. Please try again."
+                                signInError = "Incorrect email or password. Please try again."
                             }
                         }
                     }

@@ -240,7 +240,7 @@ fun SignUpScreen(
 
                     if (issues.all { it == null }) {
                         val fullName = "$trimmedFirstName $trimmedLastName".trim()
-                        if (AccountStore.register(fullName, trimmedEmail)) {
+                        if (AccountStore.register(fullName, trimmedEmail, password)) {
                             showSuccessDialog = true
                         } else {
                             emailTakenError = "This email already has an account. Please sign in."

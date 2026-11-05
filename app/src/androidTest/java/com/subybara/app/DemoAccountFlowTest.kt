@@ -70,7 +70,7 @@ class DemoAccountFlowTest {
 
     @Test fun wrongDemoPasswordDoesNotLoadSamples() {
         login("wrong")
-        compose.onNodeWithText("Incorrect demo password. Please try again.").assertIsDisplayed()
+        compose.onNodeWithText("Incorrect email or password. Please try again.").assertIsDisplayed()
         compose.runOnIdle { assertTrue(SubscriptionStore.subscriptions.isEmpty()) }
     }
 }

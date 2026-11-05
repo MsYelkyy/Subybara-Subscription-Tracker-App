@@ -20,23 +20,28 @@ object AccountStore {
         email = "capyfriend@email.com",
     )
     private val users = mutableStateMapOf<String, UserAccount>()
+    private val passwords = mutableMapOf<String, String>()
     private fun accountKey(email: String) = email.trim().lowercase(java.util.Locale.ROOT)
 
+    /**
+     * Opens the account only when the email is registered and the password matches
+     * the one chosen at sign up.
+     */
     fun signIn(email: String, password: String): Boolean {
         val key = accountKey(email)
-        if (key == DemoEmail && password != DemoPassword) return false
-        currentUser = users.getOrPut(key) {
-            UserAccount(if (key == DemoEmail) "MS2 Demo" else "Capy Friend", key)
-        }
+        val savedPassword = if (key == DemoEmail) DemoPassword else passwords[key]
+        if (savedPassword == null || password != savedPassword) return false
+        currentUser = users.getOrPut(key) { UserAccount("MS2 Demo", key) }
         SubscriptionStore.openAccount(key) { if (key == DemoEmail) demoSubscriptions() else emptyList() }
         return true
     }
 
-    fun register(name: String, email: String): Boolean {
+    fun register(name: String, email: String, password: String): Boolean {
         val key = accountKey(email)
         if (key == DemoEmail || users.containsKey(key)) return false
         currentUser = UserAccount(name.trim(), key)
         users[key] = currentUser
+        passwords[key] = password
         SubscriptionStore.openAccount(key)
         return true
     }
@@ -67,6 +72,7 @@ object AccountStore {
      */
     fun reset() {
         users.clear()
+        passwords.clear()
         SubscriptionStore.resetAccounts()
         currentUser = DefaultUser
     }

@@ -20,6 +20,8 @@ class AccountInlineValidationTest {
         compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.Error, message))
 
     @Test fun signInShowsFieldErrorsOnSubmitAndClearsThemWhenCorrected() {
+        AccountStore.register("Capy Friend", "capy@subybara.com", "secure123")
+        AccountStore.signOut()
         var signedIn = false
         compose.setContent {
             SubybaraTheme { SignInScreen(onSignInSuccess = { signedIn = true }, onForgotPasswordClick = {}, onSignUpClick = {}) }
@@ -59,9 +61,35 @@ class AccountInlineValidationTest {
         compose.onAllNodes(hasSetTextAction())[1].performTextInput("wrong")
         Espresso.closeSoftKeyboard()
         compose.onNodeWithText("Log In").performScrollTo().performClick()
-        fieldWithError("Incorrect demo password. Please try again.").assertExists()
+        fieldWithError("Incorrect email or password. Please try again.").assertExists()
         compose.onAllNodes(hasSetTextAction())[1].performTextInput("!")
-        compose.onNodeWithText("Incorrect demo password. Please try again.").assertDoesNotExist()
+        compose.onNodeWithText("Incorrect email or password. Please try again.").assertDoesNotExist()
+    }
+
+    @Test fun unregisteredEmailAndWrongPasswordCannotSignIn() {
+        AccountStore.register("Ana Cruz", "ana@example.com", "secure123")
+        AccountStore.signOut()
+        var signedIn = false
+        compose.setContent {
+            SubybaraTheme { SignInScreen(onSignInSuccess = { signedIn = true }, onForgotPasswordClick = {}, onSignUpClick = {}) }
+        }
+        compose.onAllNodes(hasSetTextAction())[0].performTextInput("nobody@example.com")
+        compose.onAllNodes(hasSetTextAction())[1].performTextInput("secure123")
+        Espresso.closeSoftKeyboard()
+        compose.onNodeWithText("Log In").performScrollTo().performClick()
+        fieldWithError("Incorrect email or password. Please try again.").assertExists()
+
+        compose.onAllNodes(hasSetTextAction())[0].performTextReplacement("ana@example.com")
+        compose.onAllNodes(hasSetTextAction())[1].performTextReplacement("wrong123")
+        Espresso.closeSoftKeyboard()
+        compose.onNodeWithText("Log In").performScrollTo().performClick()
+        fieldWithError("Incorrect email or password. Please try again.").assertExists()
+        compose.runOnIdle { assertFalse(signedIn) }
+
+        compose.onAllNodes(hasSetTextAction())[1].performTextReplacement("secure123")
+        Espresso.closeSoftKeyboard()
+        compose.onNodeWithText("Log In").performScrollTo().performClick()
+        compose.runOnIdle { assertTrue(signedIn) }
     }
 
     @Test fun signUpShowsEachRuleUnderItsFieldAndClearsWhenCorrected() {
@@ -88,7 +116,7 @@ class AccountInlineValidationTest {
     }
 
     @Test fun signUpShowsTakenEmailUnderEmailField() {
-        AccountStore.register("Ana Cruz", "ana@example.com")
+        AccountStore.register("Ana Cruz", "ana@example.com", "secure123")
         compose.setContent { SubybaraTheme { SignUpScreen(onSignUpSuccess = {}, onSignInClick = {}) } }
         compose.onNodeWithText("Juan").performTextInput("Ben")
         compose.onNodeWithText("Dela Cruz").performTextInput("Cruz")

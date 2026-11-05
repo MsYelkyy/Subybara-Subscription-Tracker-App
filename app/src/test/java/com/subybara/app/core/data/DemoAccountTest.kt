@@ -37,17 +37,24 @@ class DemoAccountTest {
         assertEquals(logos.size, logos.toSet().size)
     }
 
+    @Test fun disneyPlusHasItsOwnLogoOutsideTheDemoData() {
+        val disney = logoFor("Disney+")
+        assertNotNull(disney)
+        assertEquals(disney, logoFor("disney plus premium"))
+        assertFalse(demoSubscriptions().map { logoFor(it.name) }.contains(disney))
+    }
+
     @Test fun demoAndTwoNewUsersRemainIsolated() {
         AccountStore.signIn(AccountStore.DemoEmail, AccountStore.DemoPassword)
         val demo = SubscriptionStore.subscriptions.toList()
         AccountStore.signOut()
-        assertTrue(AccountStore.register("Ana Cruz", "ana@example.com"))
+        assertTrue(AccountStore.register("Ana Cruz", "ana@example.com", "secure123"))
         assertTrue(SubscriptionStore.subscriptions.isEmpty())
         SubscriptionStore.add(demo.first().copy(name = "Ana subscription"))
         AccountStore.signOut()
-        assertTrue(AccountStore.register("Ben Cruz", "ben@example.com"))
+        assertTrue(AccountStore.register("Ben Cruz", "ben@example.com", "benpass1"))
         assertTrue(SubscriptionStore.subscriptions.isEmpty())
-        AccountStore.signIn("ana@example.com", "simulated")
+        assertTrue(AccountStore.signIn("ana@example.com", "secure123"))
         assertEquals("Ana subscription", SubscriptionStore.subscriptions.single().name)
         assertEquals("Ana Cruz", AccountStore.currentUser.name)
         AccountStore.signIn(AccountStore.DemoEmail, AccountStore.DemoPassword)
@@ -55,13 +62,36 @@ class DemoAccountTest {
     }
 
     @Test fun incorrectDemoPasswordAndDuplicateRegistrationDoNotSwitchOrEraseData() {
-        AccountStore.register("Ana Cruz", "ana@example.com")
+        AccountStore.register("Ana Cruz", "ana@example.com", "secure123")
         val user = AccountStore.currentUser
         assertFalse(AccountStore.signIn(AccountStore.DemoEmail, "wrong"))
         assertEquals(user, AccountStore.currentUser)
         assertTrue(SubscriptionStore.subscriptions.isEmpty())
-        assertFalse(AccountStore.register("Demo", " TEST@EMAIL.COM "))
-        assertFalse(AccountStore.register("Other", " ANA@example.com "))
+        assertFalse(AccountStore.register("Demo", " TEST@EMAIL.COM ", "secure123"))
+        assertFalse(AccountStore.register("Other", " ANA@example.com ", "other123"))
         assertEquals(user, AccountStore.currentUser)
+    }
+
+    @Test fun signInRequiresTheRegisteredPassword() {
+        AccountStore.register("Ana Cruz", "ana@example.com", "secure123")
+        SubscriptionStore.add(demoSubscriptions().first())
+        AccountStore.signOut()
+        val signedOutUser = AccountStore.currentUser
+        assertFalse(AccountStore.signIn("ana@example.com", "wrong123"))
+        assertFalse(AccountStore.signIn("ana@example.com", "SECURE123"))
+        assertFalse(AccountStore.signIn("nobody@example.com", "secure123"))
+        assertEquals(signedOutUser, AccountStore.currentUser)
+        assertTrue(SubscriptionStore.subscriptions.isEmpty())
+        assertTrue(AccountStore.signIn(" ANA@example.com ", "secure123"))
+        assertEquals("Ana Cruz", AccountStore.currentUser.name)
+        assertEquals(1, SubscriptionStore.subscriptions.size)
+    }
+
+    @Test fun duplicateRegistrationDoesNotReplaceThePassword() {
+        AccountStore.register("Ana Cruz", "ana@example.com", "secure123")
+        AccountStore.signOut()
+        assertFalse(AccountStore.register("Other", "ana@example.com", "hijack123"))
+        assertFalse(AccountStore.signIn("ana@example.com", "hijack123"))
+        assertTrue(AccountStore.signIn("ana@example.com", "secure123"))
     }
 }
